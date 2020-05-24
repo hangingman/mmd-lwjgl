@@ -1,3 +1,12 @@
+buildscript {
+	ext.kotlin_version = '1.3.72'
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+	}
+}
 plugins {
     id 'org.jetbrains.kotlin.jvm' version "$kotlinVersion"
     id 'application'
@@ -7,7 +16,6 @@ apply plugin: 'kotlin'
 
 group = 'jp.gr.java_conf.hangedman.mmd'
 version = '1.0-SNAPSHOT'
-description = ''
 description = 'PMD loading sample program'
 mainClassName = 'jp.gr.java_conf.hangedman.mmd.MainKt'
 
@@ -15,16 +23,32 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 repositories {
-    mavenCentral()
+	mavenCentral()
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    compile "org.jetbrains.kotlin:kotlin-reflect"
-    compile "$lwjglNs:lwjgl:$lwjglVersion"
-    compile "$lwjglNs:lwjgl-egl:$lwjglVersion"
-    compile "$lwjglNs:lwjgl-glfw:$lwjglVersion"
-    compile "$lwjglNs:lwjgl-jawt:$lwjglVersion"
-    compile "$lwjglNs:lwjgl-opengl:$lwjglVersion"
-    compile "$lwjglNs:lwjgl-opengles:$lwjglVersion"
+	implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
+
+	implementation "org.lwjgl:lwjgl"
+	implementation "org.lwjgl:lwjgl-assimp"
+	implementation "org.lwjgl:lwjgl-bgfx"
+	implementation "org.lwjgl:lwjgl-glfw"
+	implementation "org.lwjgl:lwjgl-nanovg"
+	implementation "org.lwjgl:lwjgl-nuklear"
+	implementation "org.lwjgl:lwjgl-openal"
+	implementation "org.lwjgl:lwjgl-opengl"
+	implementation "org.lwjgl:lwjgl-par"
+	implementation "org.lwjgl:lwjgl-stb"
+	implementation "org.lwjgl:lwjgl-vulkan"
+	runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-assimp::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-bgfx::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-nanovg::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-nuklear::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-openal::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-par::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
+	implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }
