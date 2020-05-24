@@ -21,4 +21,10 @@ repositories {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     compile "org.jetbrains.kotlin:kotlin-reflect"
+    compile "$lwjglNs:lwjgl:$lwjglVersion"
+    compile "$lwjglNs:lwjgl-egl:$lwjglVersion"
+    compile "$lwjglNs:lwjgl-glfw:$lwjglVersion"
+    compile "$lwjglNs:lwjgl-jawt:$lwjglVersion"
+    compile "$lwjglNs:lwjgl-opengl:$lwjglVersion"
+    compile "$lwjglNs:lwjgl-opengles:$lwjglVersion"
 }
