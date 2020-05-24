@@ -1,0 +1,24 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version "$kotlinVersion"
+    id 'application'
+}
+
+apply plugin: 'kotlin'
+
+group = 'jp.gr.java_conf.hangedman.mmd'
+version = '1.0-SNAPSHOT'
+description = ''
+description = 'PMD loading sample program'
+mainClassName = 'jp.gr.java_conf.hangedman.mmd.MainKt'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    compile "org.jetbrains.kotlin:kotlin-reflect"
+}
