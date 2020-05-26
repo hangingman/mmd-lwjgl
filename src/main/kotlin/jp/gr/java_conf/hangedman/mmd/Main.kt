@@ -1,9 +1,15 @@
 package jp.gr.java_conf.hangedman.mmd
 
-import jp.gr.java_conf.hangedman.mmd.GlfwConstants.fragmentSource
-import jp.gr.java_conf.hangedman.mmd.GlfwConstants.vertexSource
+import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.fragmentSource
+import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.height
+import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.title
+import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.vertexSource
+import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.width
 import jp.gr.java_conf.hangedman.mmd.Main.Companion.enter
 import jp.gr.java_conf.hangedman.mmd.Main.Companion.render
+import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.matModel
+import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.matProj
+import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.matView
 import org.lwjgl.BufferUtils
 import org.lwjgl.Version
 import org.lwjgl.glfw.GLFW
@@ -20,7 +26,7 @@ fun main(args: Array<String>) {
     println("       GLFW - ${GLFW.glfwGetVersionString()} !")
 
     val (window, shader, attribVertex) = enter()
-    while (! GLFW.glfwWindowShouldClose(window)) {
+    while (!GLFW.glfwWindowShouldClose(window)) {
         render(window)
     }
     // GLFWの終了処理
@@ -31,9 +37,6 @@ class Main {
 
     companion object {
         private val logger = LoggerFactory.getLogger(this::class.java)
-        private const val width = 640
-        private const val height = 480
-        private const val title = "Load PMD file testing"
 
         // 初期化してシェーダーを返す
         fun enter(): Triple<Long, Int, Int> {
@@ -74,7 +77,9 @@ class Main {
             val attribVertex = GL20.glGetAttribLocation(shader, "vertex")
             val fb = BufferUtils.createFloatBuffer(16)
 
-
+            GL20.glUniformMatrix4fv(GL20.glGetUniformLocation(shader,"projection"), false, matProj.get(fb))
+            GL20.glUniformMatrix4fv(GL20.glGetUniformLocation(shader,"view"), false, matView.get(fb))
+            GL20.glUniformMatrix4fv(GL20.glGetUniformLocation(shader,"model"), false, matModel.get(fb))
             GL20.glUseProgram(0)
             return Triple(window, shader, attribVertex)
         }
