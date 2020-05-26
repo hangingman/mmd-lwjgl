@@ -27,7 +27,7 @@ fun main(args: Array<String>) {
 
     val (window, shader, attribVertex) = enter()
     while (!GLFW.glfwWindowShouldClose(window)) {
-        render(window)
+        render(window, shader)
     }
     // GLFWの終了処理
     GLFW.glfwTerminate()
@@ -84,13 +84,13 @@ class Main {
             return Triple(window, shader, attribVertex)
         }
 
-        fun render(window: Long) {
+        fun render(window: Long, shader: Int) {
             // ダブルバッファのスワップ
             GLFW.glfwSwapBuffers(window)
             GLFW.glfwPollEvents()
         }
 
-        fun makeShader(vertexSource: String, fragmentSource: String): Int {
+        private fun makeShader(vertexSource: String, fragmentSource: String): Int {
             // シェーダーオブジェクト作成
             val vertShaderObj = GL20.glCreateShader(GL20.GL_VERTEX_SHADER)
             val fragShaderObj = GL20.glCreateShader(GL20.GL_FRAGMENT_SHADER)
