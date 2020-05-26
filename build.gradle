@@ -29,6 +29,7 @@ repositories {
 dependencies {
 	implementation "uk.org.lidalia:sysout-over-slf4j:1.0.2"
 	implementation "io.github.microutils:kotlin-logging:1.7.9"
+	implementation "org.joml:joml:1.9.24"
 	implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
 	implementation "org.lwjgl:lwjgl"
 	implementation "org.lwjgl:lwjgl-assimp"

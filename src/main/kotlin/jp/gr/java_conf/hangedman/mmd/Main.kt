@@ -1,13 +1,14 @@
 package jp.gr.java_conf.hangedman.mmd
 
+import jp.gr.java_conf.hangedman.mmd.GlfwConstants.fragmentSource
+import jp.gr.java_conf.hangedman.mmd.GlfwConstants.vertexSource
 import jp.gr.java_conf.hangedman.mmd.Main.Companion.enter
 import jp.gr.java_conf.hangedman.mmd.Main.Companion.render
+import org.lwjgl.BufferUtils
 import org.lwjgl.Version
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFWVidMode
-import org.lwjgl.opengl.GL
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GLUtil
+import org.lwjgl.opengl.*
 import org.lwjgl.system.MemoryUtil.NULL
 import org.slf4j.LoggerFactory
 import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J
@@ -18,7 +19,7 @@ fun main(args: Array<String>) {
     println("       OpenGL - ${GL11.GL_VERSION} !")
     println("       GLFW - ${GLFW.glfwGetVersionString()} !")
 
-    val window = enter()
+    val (window, shader, attribVertex) = enter()
     while (! GLFW.glfwWindowShouldClose(window)) {
         render(window)
     }
@@ -29,13 +30,13 @@ fun main(args: Array<String>) {
 class Main {
 
     companion object {
-        private val logger = LoggerFactory.getLogger(this.javaClass)
-        const val width = 640
-        const val height = 480
-        const val title = "Load PMD file testing"
+        private val logger = LoggerFactory.getLogger(this::class.java)
+        private const val width = 640
+        private const val height = 480
+        private const val title = "Load PMD file testing"
 
         // 初期化してシェーダーを返す
-        fun enter(): Long {
+        fun enter(): Triple<Long, Int, Int> {
             // GLFW初期化
             GLFW.glfwInit()
             GLFW.glfwDefaultWindowHints()
@@ -69,13 +70,55 @@ class Main {
             SysOutOverSLF4J.sendSystemOutAndErrToSLF4J()
             GLUtil.setupDebugMessageCallback(System.out)
 
-            return window
+            val shader = makeShader(vertexSource, fragmentSource)
+            val attribVertex = GL20.glGetAttribLocation(shader, "vertex")
+            val fb = BufferUtils.createFloatBuffer(16)
+
+
+            GL20.glUseProgram(0)
+            return Triple(window, shader, attribVertex)
         }
 
         fun render(window: Long) {
             // ダブルバッファのスワップ
             GLFW.glfwSwapBuffers(window)
             GLFW.glfwPollEvents()
+        }
+
+        fun makeShader(vertexSource: String, fragmentSource: String): Int {
+            // シェーダーオブジェクト作成
+            val vertShaderObj = GL20.glCreateShader(GL20.GL_VERTEX_SHADER)
+            val fragShaderObj = GL20.glCreateShader(GL20.GL_FRAGMENT_SHADER)
+
+            // シェーダーのソースプログラムの読み込み
+            readShaderSource(vertShaderObj, vertexSource)
+            readShaderSource(fragShaderObj, fragmentSource)
+
+            // バーテックスシェーダーのソースプログラムのコンパイル
+            GL20.glCompileShader(vertShaderObj)
+            // フラグメントシェーダーのソースプログラムのコンパイル
+            GL20.glCompileShader(fragShaderObj)
+
+            // プログラムオブジェクトの作成
+            val shader = GL20.glCreateProgram()
+            // シェーダーオブジェクトのシェーダープログラムへの登録
+            GL20.glAttachShader(shader, vertShaderObj)
+            GL20.glAttachShader(shader, fragShaderObj)
+            // シェーダーオブジェクトの削除
+            GL20.glDeleteShader(vertShaderObj)
+            GL20.glDeleteShader(fragShaderObj)
+            // シェーダーにデータの位置をバインド
+            GL30.glBindFragDataLocation(shader, 0, "fragColor")
+            // シェーダープログラムのリンク
+            GL20.glLinkProgram(shader)
+            GL20.glUseProgram(shader)
+
+            return shader
+        }
+
+        private fun readShaderSource(shaderObj: Int, shaderSrc: String) {
+            logger.debug("shader source: \n$shaderSrc")
+            GL20.glShaderSource(shaderObj, shaderSrc)
         }
     }
 }
