@@ -14,3 +14,10 @@ pom.xml.asc
 .idea/
 .gradle/
 build/
+
+# gem
+rawr/
+pkg/
+
+# jruby.sh
+vendor/*.jar

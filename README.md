@@ -1,15 +1,12 @@
 # mmd-clj
 
-A Clojure application to load pmd files with LWJGL
-
 ## Usage
 
-* Download "HatsuneMiku.pmd" into `src/main/resources` or `src/test/resources`
-* Execute following commands:
+- Use msys2 shell if windows platform
 
 ```
-$ lein check
-$ lein run
+$ ./jruby.sh -S gem install bundler
+$ ./bundle.sh install --path=vendor/bundle --binstubs
 ```
 
 ## License

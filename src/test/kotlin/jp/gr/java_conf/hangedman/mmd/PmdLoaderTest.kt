@@ -14,4 +14,9 @@ class PmdLoaderTest {
     fun testGetResourceAsStream() {
         assertNotNull(PmdLoader.getResourceAsStream("HatsuneMiku.pmd"))
     }
+
+    @Test
+    fun testPmdHeader() {
+        PmdLoader.pmdHeader()
+    }
 }
