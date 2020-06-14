@@ -7,9 +7,9 @@ object PmdParser {
 
     private val pmdParser: JBBPParser = JBBPParser.prepare("""
         byte[3] magic;
-        //version(float)
-        //model_name(char[20])
-        //comment(char[256])
+        <floatj version;
+        byte[20] modelName;
+        byte[256] comment;
     """.trimIndent())
 
     fun parse(stream: InputStream): PmdStruct {
