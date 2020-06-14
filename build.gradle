@@ -32,6 +32,7 @@ dependencies {
 	implementation "org.joml:joml:1.9.24"
 	implementation "org.apache.commons:commons-lang3:3.7"
 	implementation "ch.qos.logback:logback-classic:1.2.3"
+	implementation "com.igormaznitsa:jbbp:2.0.1"
 
     testImplementation "org.junit.jupiter:junit-jupiter:5.6.2"
     runtimeOnly "org.junit.jupiter:junit-jupiter-engine"
