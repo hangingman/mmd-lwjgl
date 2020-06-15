@@ -14,6 +14,7 @@ class PmdParserTest {
         val stream = PmdLoader.getResourceAsStream("HatsuneMiku.pmd")
         val pmdStruct = PmdParser.parse(stream)
 
+        // ヘッダー
         assertArrayEquals("Pmd".toByteArray(), pmdStruct.magic)
         assertEquals("1.00".toFloat(), pmdStruct.version)
         assertThat(pmdStruct.modelName!!.toString(charset = charset("Shift_JIS")),
@@ -22,5 +23,8 @@ class PmdParserTest {
         assertThat(pmdStruct.comment!!.toString(charset = charset("Shift_JIS")),
                 allOf(notNullValue(), startsWith("PolyMo用モデルデータ：初音ミク ver.1.3"))
         )
+
+        // 頂点リスト
+        assertEquals(9036, pmdStruct.vertCount)
     }
 }
