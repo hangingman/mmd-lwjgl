@@ -21,10 +21,10 @@ class PmdStruct {
 }
 
 class Vertex {
-    @Bin var pos: FloatArray? = null
-    @Bin var normalVec: FloatArray? = null
-    @Bin var uv: FloatArray? = null
-    @Bin var boneNum: ShortArray? = null
+    @Bin var pos: FloatArray = floatArrayOf(0F, 0F, 0F)
+    @Bin var normalVec: FloatArray = floatArrayOf(0F, 0F, 0F)
+    @Bin var uv: FloatArray = floatArrayOf(0F, 0F)
+    @Bin var boneNum: ShortArray = shortArrayOf(0, 0)
     @Bin var boneWeight: Byte = 0
     @Bin var edgeFlag: Byte = 0
 }
