@@ -18,6 +18,14 @@ class PmdStruct {
         this.vertex = arrayOfNulls<Vertex?>(vertCount)
     }
     var vertex: Array<Vertex?> = arrayOfNulls<Vertex?>(0)
+
+    // 面頂点リスト
+    var faceVertCount: Int = 0
+    set(faceVertCount) {
+        field = faceVertCount
+        this.faceVertIndex = ShortArray(faceVertCount)
+    }
+    var faceVertIndex: ShortArray? = null
 }
 
 class Vertex {

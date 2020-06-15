@@ -30,12 +30,13 @@ class PmdParserTest {
         assertThat(pmdStruct.comment!!.toString(charset = charset("Shift_JIS")),
                 allOf(notNullValue(), startsWith("PolyMo用モデルデータ：初音ミク ver.1.3"))
         )
-        // 頂点リスト
-        assertEquals(9036, pmdStruct.vertCount)
     }
 
     @Test
     fun testParseVertex() {
+
+        // 頂点リスト
+        assertEquals(9036, pmdStruct.vertCount)
 
         val stream = this::class.java.classLoader.getResourceAsStream("vertex.csv")
         requireNotNull(stream)
@@ -65,6 +66,27 @@ class PmdParserTest {
                 assertEquals(weight, this.boneWeight)
                 assertEquals(edge, this.edgeFlag)
             }
+        }
+    }
+
+    @Test
+    fun testParseFaceVert() {
+        // 面頂点リスト
+        assertEquals(44991, pmdStruct.faceVertCount)
+
+        val stream = this::class.java.classLoader.getResourceAsStream("face_vertex.csv")
+        requireNotNull(stream)
+
+        val rows: List<Map<String, String>> = csvReader().readAllWithHeader(stream)
+        rows.forEach { e ->
+            val index = e["index"]?.toInt() ?: throw IllegalStateException()
+            val faceVert1 = e["faceVert1"]?.toShort() ?: throw IllegalStateException()
+            val faceVert2 = e["faceVert2"]?.toShort() ?: throw IllegalStateException()
+            val faceVert3 = e["faceVert3"]?.toShort() ?: throw IllegalStateException()
+
+            assertEquals(faceVert1, this.pmdStruct.faceVertIndex?.get(3*index))
+            assertEquals(faceVert2, this.pmdStruct.faceVertIndex?.get(3*index+1))
+            assertEquals(faceVert3, this.pmdStruct.faceVertIndex?.get(3*index+2))
         }
     }
 }

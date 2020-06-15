@@ -1,5 +1,7 @@
 package jp.gr.java_conf.hangedman.mmd
 
+import jp.gr.java_conf.hangedman.mmd.pmd.PmdParser
+import jp.gr.java_conf.hangedman.mmd.pmd.PmdStruct
 import org.apache.commons.lang3.time.DurationFormatUtils
 import org.apache.commons.lang3.time.StopWatch
 import org.slf4j.LoggerFactory
@@ -9,16 +11,19 @@ object PmdLoader {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    fun loadPmdFile(pmdFile: String) {
+    fun loadPmdFile(pmdFile: String): PmdStruct {
         val stopWatch = StopWatch()
         stopWatch.start()
         logger.debug("load file: $pmdFile")
 
         val stream = getResourceAsStream(pmdFile)
+        val pmdStruct = PmdParser.parse(stream)
 
         // show time
         stopWatch.stop()
         logger.debug("Loading time: ${millTimeFormat(0, stopWatch.time)}, Hello MMD!")
+
+        return pmdStruct
     }
 
     internal fun getResourceAsStream(file: String): InputStream {

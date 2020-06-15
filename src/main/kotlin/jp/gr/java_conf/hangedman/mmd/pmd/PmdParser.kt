@@ -22,6 +22,10 @@ object PmdParser {
             byte boneWeight;
             byte edgeFlag;
         }
+        
+        // 面頂点リスト
+        <int faceVertCount;
+        <short[faceVertCount] faceVertIndex;
     """.trimIndent())
 
     fun parse(stream: InputStream): PmdStruct {
