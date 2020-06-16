@@ -1,6 +1,6 @@
-# mmd-clj
+# mmd-lwjgl
 
-A Clojure application to load pmd files with LWJGL
+A Kotlin application to load pmd files with LWJGL
 
 ## Usage
 
@@ -8,13 +8,13 @@ A Clojure application to load pmd files with LWJGL
 * Execute following commands:
 
 ```
-$ lein check
-$ lein run
+$ ./gradlew build -x test
+$ ./gradlew run
 ```
 
 ## License
 
-Copyright c 2018 Hiroyuki Nagata
+Copyright c 2020 Hiroyuki Nagata
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
