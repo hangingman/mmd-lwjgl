@@ -11,6 +11,7 @@ import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.height
 import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.title
 import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.vertexSource
 import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.width
+import org.lwjgl.BufferUtils
 import org.lwjgl.Version
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWVidMode
@@ -47,6 +48,9 @@ class Main {
         private val logger = LoggerFactory.getLogger(this::class.java)
         private var vao: Int? = null
         private var vbo: Int? = null
+        private var vboi: Int? = null
+        private var indicesCount: Int = 0
+
         private var shader: Int? = null
         private var vertShaderObj: Int? = null
         private var fragShaderObj: Int? = null
@@ -55,18 +59,54 @@ class Main {
 
         // テスト
         fun createVertex() {
+            // Vertices, the order is not important.
+            val vertices = floatArrayOf(
+                    -0.5f, 0.5f, 0f,    // Left top         ID: 0
+                    -0.5f, -0.5f, 0f,   // Left bottom      ID: 1
+                    0.5f, -0.5f, 0f,    // Right bottom     ID: 2
+                    0.5f, 0.5f, 0f      // Right left       ID: 3
+            )
+            // Sending data to OpenGL requires the usage of (flipped) byte buffers
+            val verticesBuffer = BufferUtils.createFloatBuffer(vertices.size)
+            verticesBuffer.put(vertices)
+            verticesBuffer.flip()
+             
+            // OpenGL expects to draw vertices in counter clockwise order by default
+            val indices = byteArrayOf(
+                    // Left bottom triangle
+                    0, 1, 2,
+                    // Right top triangle
+                    2, 3, 0
+            )
+            indicesCount = indices.size
+            val indicesBuffer = BufferUtils.createByteBuffer(indicesCount)
+            indicesBuffer.put(indices)
+            indicesBuffer.flip()
+             
+            // Create a new Vertex Array Object in memory and select it (bind)
+            // A VAO can have up to 16 attributes (VBO's) assigned to it by default
             this.vao = glGenVertexArrays()
             glBindVertexArray(this.vao!!)
-
-            // 3次元座標xyzと色RGBで1頂点情報
-            val vertices = floatArrayOf(
-                0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f,   // 赤
-                -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, // 緑
-                0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f   // 青
-            )
+             
+            // Create a new Vertex Buffer Object in memory and select it (bind)
+            // A VBO is a collection of Vectors which in this case resemble the location of each vertex.
             this.vbo = glGenBuffers()
             glBindBuffer(GL_ARRAY_BUFFER, this.vbo!!)
-            glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW)
+            glBufferData(GL_ARRAY_BUFFER, verticesBuffer, GL_STATIC_DRAW)
+            // Put the VBO in the attributes list at index 0
+            glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0)
+            // Deselect (bind to 0) the VBO
+            glBindBuffer(GL_ARRAY_BUFFER, 0)
+             
+            // Deselect (bind to 0) the VAO
+            glBindVertexArray(0)
+             
+            // Create a new VBO for the indices and select it (bind)
+            this.vboi = glGenBuffers()
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.vboi!!)
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL_STATIC_DRAW)
+            // Deselect (bind to 0) the VBO
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)            
         }
 
         // 初期化してシェーダーを返す
@@ -189,19 +229,32 @@ class Main {
 
         fun render() {
             glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
-    
+             
+            // Bind to the VAO that has all the information about the vertices
             glBindVertexArray(this.vao!!)
+            glEnableVertexAttribArray(0)
+             
+            // Bind to the index VBO that has all the information about the order of the vertices
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.vboi!!)
+
             glUseProgram(this.shader!!)
-    
             // updateメソッドで求めた回転行列をグローバルGLSL変数に設定
             glUniformMatrix4fv(this.uniModel!!, false, this.modelMatrix.value)
-    
-            glDrawArrays(GL_TRIANGLES, 0, 3)
+             
+            // Draw the vertices
+            glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_BYTE, 0)
+             
+            // Put everything back to default (deselect)
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
+            glDisableVertexAttribArray(0)
+            glBindVertexArray(0)
         }
         
         fun cleanup() {
             glDeleteVertexArrays(this.vao!!)
             glDeleteBuffers(this.vbo!!)
+            glDeleteBuffers(this.vboi!!)
+
             glDeleteShader(this.vertShaderObj!!)
             glDeleteShader(this.fragShaderObj!!)
             glDeleteProgram(this.shader!!)
