@@ -104,6 +104,10 @@ class Main {
             SysOutOverSLF4J.sendSystemOutAndErrToSLF4J()
             GLUtil.setupDebugMessageCallback(System.out)
 
+            // 背景色変更
+            glClearColor(0.4f, 0.6f, 0.9f, 0f)
+            glViewport(0, 0, width, height)
+
             // ここから描画情報の読み込み
             createVertex()
             makeShader(vertexSource, fragmentSource)
