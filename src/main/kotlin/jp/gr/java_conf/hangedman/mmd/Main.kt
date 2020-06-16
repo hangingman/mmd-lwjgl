@@ -6,10 +6,12 @@ import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.title
 import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.vertexSource
 import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.width
 import jp.gr.java_conf.hangedman.mmd.Main.Companion.enter
+import jp.gr.java_conf.hangedman.mmd.Main.Companion.initVao
 import jp.gr.java_conf.hangedman.mmd.Main.Companion.render
 import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.matModel
 import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.matProj
 import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.matView
+import jp.gr.java_conf.hangedman.mmd.pmd.PmdStruct
 import org.lwjgl.BufferUtils
 import org.lwjgl.Version
 import org.lwjgl.glfw.GLFW
@@ -26,8 +28,11 @@ fun main(args: Array<String>) {
     println("       GLFW - ${GLFW.glfwGetVersionString()} !")
 
     val (window, shader, attribVertex) = enter()
+    val pmdStruct = PmdLoader.loadPmdFile("HatsuneMiku.pmd")
+    val (vArrayId, indexId) = initVao(window, attribVertex, pmdStruct)
+
     while (!GLFW.glfwWindowShouldClose(window)) {
-        render(window, shader)
+        render(window, shader, vArrayId, indexId, attribVertex, pmdStruct)
     }
     // GLFWの終了処理
     GLFW.glfwTerminate()
@@ -84,7 +89,24 @@ class Main {
             return Triple(window, shader, attribVertex)
         }
 
-        fun render(window: Long, shader: Int) {
+        fun render(window: Long, shader: Int, vArrayId: Int, indexId: Int, attribVertex: Int, pmdStruct: PmdStruct) {
+            // バッファのクリア
+            GL11.glClearColor(0.2F, 0.2F, 0.2F, 0.0F)
+            GL11.glClear(GL11.GL_COLOR_BUFFER_BIT)
+            GL20.glUseProgram(shader)
+
+            GL30.glBindVertexArray(vArrayId)
+            GL20.glEnableVertexAttribArray(attribVertex)
+            GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, indexId)
+
+            GL11.glDrawElements(GL11.GL_TRIANGLES, pmdStruct.faceVertCount, GL11.GL_UNSIGNED_SHORT, 0)
+
+            GL20.glDisableVertexAttribArray(attribVertex)
+            GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0)
+
+            GL30.glBindVertexArray(0)
+            GL20.glUseProgram(0)
+
             // ダブルバッファのスワップ
             GLFW.glfwSwapBuffers(window)
             GLFW.glfwPollEvents()
@@ -124,6 +146,40 @@ class Main {
         private fun readShaderSource(shaderObj: Int, shaderSrc: String) {
             logger.debug("shader source: \n$shaderSrc")
             GL20.glShaderSource(shaderObj, shaderSrc)
+        }
+
+        fun initVao(window: Long, attribVertex: Int, pmdStruct: PmdStruct): Pair<Int, Int> {
+            val verticeBuffer = BufferUtils.createFloatBuffer(pmdStruct.vertCount*3)
+
+            // vertexは構造が違うため単純なArrayに変換する
+            val vertexFloatArray = pmdStruct.vertex!!
+                    .map { v -> v.pos }
+                    .flatMap {
+                        fArray -> mutableListOf<Float>().also { it.addAll(fArray.asList()) }
+                    }.toFloatArray()
+
+            val indexBuffer = BufferUtils.createShortBuffer(pmdStruct.faceVertCount)
+            val vArrayId = GL30.glGenVertexArrays()
+            val vBufferId = GL15.glGenBuffers()
+            val indexId = GL15.glGenBuffers()
+
+            verticeBuffer.put(vertexFloatArray).flip()
+            indexBuffer.put(pmdStruct.faceVertIndex).flip()
+            GL30.glBindVertexArray(vArrayId)
+
+            // Vertex Buffer Object
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vBufferId)
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, verticeBuffer, GL15.GL_STATIC_DRAW)
+            GL20.glVertexAttribPointer(attribVertex,3, GL11.GL_FLOAT, false, 0, 0)
+
+            // Element Buffer Object
+            GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, indexId)
+            GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indexBuffer, GL15.GL_STATIC_DRAW)
+
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0)
+            GL30.glBindVertexArray(0)
+
+            return vArrayId to indexId
         }
     }
 }

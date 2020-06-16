@@ -14,14 +14,14 @@ object PmdLoader {
     fun loadPmdFile(pmdFile: String): PmdStruct {
         val stopWatch = StopWatch()
         stopWatch.start()
-        logger.debug("load file: $pmdFile")
+        logger.info("load file: $pmdFile")
 
         val stream = getResourceAsStream(pmdFile)
         val pmdStruct = PmdParser.parse(stream)
 
         // show time
         stopWatch.stop()
-        logger.debug("Loading time: ${millTimeFormat(0, stopWatch.time)}, Hello MMD!")
+        logger.info("Loading time: ${millTimeFormat(0, stopWatch.time)}, Hello MMD!")
 
         return pmdStruct
     }
