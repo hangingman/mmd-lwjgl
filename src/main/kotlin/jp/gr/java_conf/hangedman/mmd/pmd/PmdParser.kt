@@ -26,6 +26,20 @@ object PmdParser {
         // 面頂点リスト
         <int faceVertCount;
         <short[faceVertCount] faceVertIndex;
+        
+        // 材質リスト
+        <int materialCount;
+        material [materialCount]{
+            <floatj[3] diffuseColor;
+            <floatj alpha;
+            <floatj specularity;
+            <floatj[3] specularColor;
+            <floatj[3] mirrorColor;
+            byte toonIndex;
+            byte edgeFlag;
+            <int faceVertCount;
+            byte[20] textureFileName;
+        }
     """.trimIndent())
 
     fun parse(stream: InputStream): PmdStruct {

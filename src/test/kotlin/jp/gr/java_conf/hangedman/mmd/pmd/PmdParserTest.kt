@@ -57,14 +57,16 @@ class PmdParserTest {
             val weight = e["boneWeight"]?.toByte() ?: throw IllegalStateException()
             val edge = e["edgeFlag"]?.toByte() ?: throw IllegalStateException()
 
-            pmdStruct.vertex[index].run {
-                requireNotNull(this)
-                assertArrayEquals(floatArrayOf(x, y, z), this.pos)
-                assertArrayEquals(floatArrayOf(nx, ny, nz), this.normalVec)
-                assertArrayEquals(floatArrayOf(u, v), this.uv)
-                assertArrayEquals(shortArrayOf(bone1, bone2), this.boneNum)
-                assertEquals(weight, this.boneWeight)
-                assertEquals(edge, this.edgeFlag)
+            pmdStruct.vertex.run {
+                this!![index].run {
+                    requireNotNull(this)
+                    assertArrayEquals(floatArrayOf(x, y, z), this.pos)
+                    assertArrayEquals(floatArrayOf(nx, ny, nz), this.normalVec)
+                    assertArrayEquals(floatArrayOf(u, v), this.uv)
+                    assertArrayEquals(shortArrayOf(bone1, bone2), this.boneNum)
+                    assertEquals(weight, this.boneWeight)
+                    assertEquals(edge, this.edgeFlag)
+                }
             }
         }
     }
@@ -84,9 +86,51 @@ class PmdParserTest {
             val faceVert2 = e["faceVert2"]?.toShort() ?: throw IllegalStateException()
             val faceVert3 = e["faceVert3"]?.toShort() ?: throw IllegalStateException()
 
-            assertEquals(faceVert1, this.pmdStruct.faceVertIndex?.get(3*index))
-            assertEquals(faceVert2, this.pmdStruct.faceVertIndex?.get(3*index+1))
-            assertEquals(faceVert3, this.pmdStruct.faceVertIndex?.get(3*index+2))
+            assertEquals(faceVert1, this.pmdStruct.faceVertIndex?.get(3 * index))
+            assertEquals(faceVert2, this.pmdStruct.faceVertIndex?.get(3 * index + 1))
+            assertEquals(faceVert3, this.pmdStruct.faceVertIndex?.get(3 * index + 2))
         }
     }
+
+    @Test
+    fun testMaterial() {
+        // 材質リスト
+        assertEquals(17, pmdStruct.materialCount)
+
+        val stream = this::class.java.classLoader.getResourceAsStream("material.csv")
+        requireNotNull(stream)
+
+        val rows: List<Map<String, String>> = csvReader().readAllWithHeader(stream)
+        rows.forEach { e ->
+            val index = e["index"]?.toInt() ?: throw IllegalStateException()
+            val dr = e["dr"]?.toFloat() ?: throw IllegalStateException()
+            val dg = e["dg"]?.toFloat() ?: throw IllegalStateException()
+            val db = e["db"]?.toFloat() ?: throw IllegalStateException()
+            val alpha = e["alpha"]?.toFloat() ?: throw IllegalStateException()
+            val specularity = e["specularity"]?.toFloat() ?: throw IllegalStateException()
+            val sr = e["sr"]?.toFloat() ?: throw IllegalStateException()
+            val sg = e["sg"]?.toFloat() ?: throw IllegalStateException()
+            val sb = e["sb"]?.toFloat() ?: throw IllegalStateException()
+            val mr = e["mr"]?.toFloat() ?: throw IllegalStateException()
+            val mg = e["mg"]?.toFloat() ?: throw IllegalStateException()
+            val mb = e["mb"]?.toFloat() ?: throw IllegalStateException()
+            val toonIndex = e["toonIndex"]?.toByte() ?: throw IllegalStateException()
+            val edgeFlag = e["edgeFlag"]?.toByte() ?: throw IllegalStateException()
+            val faceVertCount = e["faceVertCount"]?.toInt() ?: throw IllegalStateException()
+            val textureFileName: ByteArray = e["textureFileName"]?.toByteArray() ?: throw IllegalStateException()
+
+            assertArrayEquals(floatArrayOf(dr, dg, db), pmdStruct.material!![index].diffuseColor)
+            assertEquals(alpha, pmdStruct.material!![index].alpha)
+            assertEquals(specularity, pmdStruct.material!![index].specularity)
+            assertArrayEquals(floatArrayOf(sr, sg, sb), pmdStruct.material!![index].specularColor)
+            assertArrayEquals(floatArrayOf(mr, mg, mb), pmdStruct.material!![index].mirrorColor)
+            assertEquals(toonIndex, pmdStruct.material!![index].toonIndex)
+            assertEquals(edgeFlag, pmdStruct.material!![index].edgeFlag)
+            assertEquals(faceVertCount, pmdStruct.material!![index].faceVertCount)
+            //assertEquals(textureFileName, pmdStruct.material!![index].textureFileName)
+        }
+
+
+    }
+
 }
