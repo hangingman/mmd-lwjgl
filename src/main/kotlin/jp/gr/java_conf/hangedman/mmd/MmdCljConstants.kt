@@ -1,7 +1,5 @@
 package jp.gr.java_conf.hangedman.mmd
 
-import org.joml.Matrix4f
-
 object MmdCljConstants {
 
     const val width = 640
@@ -45,7 +43,8 @@ object MmdCljConstants {
         
         void main() {
             // 頂点カラーをそのまま出力
-            fragColor = vec4(vertexColor, 1.0);
+            //fragColor = vec4(vertexColor, 1.0);
+            fragColor = vec4(0.0, 1.0, 0.0, 1.0);
         }
     """
 

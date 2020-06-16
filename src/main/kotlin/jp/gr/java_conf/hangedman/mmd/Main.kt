@@ -11,6 +11,7 @@ import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.height
 import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.title
 import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.vertexSource
 import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.width
+import jp.gr.java_conf.hangedman.mmd.pmd.PmdStruct
 import org.lwjgl.BufferUtils
 import org.lwjgl.Version
 import org.lwjgl.glfw.GLFW.*
@@ -28,8 +29,8 @@ fun main(args: Array<String>) {
     println("       OpenGL - ${GL_VERSION} !")
     println("       GLFW - ${glfwGetVersionString()} !")
 
-    val window = enter()
     val pmdStruct = PmdLoader.loadPmdFile("HatsuneMiku.pmd")
+    val window = enter(pmdStruct)
 
     while (!glfwWindowShouldClose(window)) {
         update()
@@ -58,28 +59,45 @@ class Main {
         private var modelMatrix = Matrix4f()
 
         // テスト
-        fun createVertex() {
+        fun createVertex(pmdStruct: PmdStruct) {
             // Vertices, the order is not important.
+
+            /**
             val vertices = floatArrayOf(
                     -0.5f, 0.5f, 0f,    // Left top         ID: 0
                     -0.5f, -0.5f, 0f,   // Left bottom      ID: 1
                     0.5f, -0.5f, 0f,    // Right bottom     ID: 2
                     0.5f, 0.5f, 0f      // Right left       ID: 3
-            )
+            ) */
+
+            var vertices = pmdStruct.vertex!!
+                    .map { v -> v.pos }
+                    .flatMap { fArray ->
+                        mutableListOf<Float>().also {
+                            it.addAll(fArray.asList().map { p -> (p/20) }.toList())
+                        }
+                    }.toFloatArray()
+
+
             // Sending data to OpenGL requires the usage of (flipped) byte buffers
             val verticesBuffer = BufferUtils.createFloatBuffer(vertices.size)
             verticesBuffer.put(vertices)
             verticesBuffer.flip()
              
             // OpenGL expects to draw vertices in counter clockwise order by default
-            val indices = byteArrayOf(
+            /**
+            val indices = shortArrayOf(
                     // Left bottom triangle
                     0, 1, 2,
                     // Right top triangle
                     2, 3, 0
             )
-            indicesCount = indices.size
-            val indicesBuffer = BufferUtils.createByteBuffer(indicesCount)
+            indicesCount = indices.size */
+
+            val indices = pmdStruct.faceVertIndex
+            indicesCount = pmdStruct.faceVertCount
+
+            val indicesBuffer = BufferUtils.createShortBuffer(indicesCount)
             indicesBuffer.put(indices)
             indicesBuffer.flip()
              
@@ -110,7 +128,7 @@ class Main {
         }
 
         // 初期化してシェーダーを返す
-        fun enter(): Long {
+        fun enter(pmdStruct: PmdStruct): Long {
             // GLFW初期化
             glfwInit()
             glfwDefaultWindowHints()
@@ -149,7 +167,7 @@ class Main {
             glViewport(0, 0, width, height)
 
             // ここから描画情報の読み込み
-            createVertex()
+            createVertex(pmdStruct)
             makeShader(vertexSource, fragmentSource)
 
             val floatSize = 4
@@ -159,9 +177,9 @@ class Main {
             glVertexAttribPointer(posAttrib, 3, GL_FLOAT, false, 6 * floatSize, 0)
 
             // 頂点シェーダーのinパラメータ"color"と対応
-            val colAttrib = glGetAttribLocation(this.shader!!, "color")
-            glEnableVertexAttribArray(colAttrib)
-            glVertexAttribPointer(colAttrib, 3, GL_FLOAT, false, 6 * floatSize, (3 * floatSize).toLong())
+            //val colAttrib = glGetAttribLocation(this.shader!!, "color")
+            //glEnableVertexAttribArray(colAttrib)
+            //glVertexAttribPointer(colAttrib, 3, GL_FLOAT, false, 6 * floatSize, (3 * floatSize).toLong())
 
             // 頂点シェーダーのグローバルGLSL変数"model"の位置を保持しておく
             // 毎フレーム設定するので
@@ -242,7 +260,7 @@ class Main {
             glUniformMatrix4fv(this.uniModel!!, false, this.modelMatrix.value)
              
             // Draw the vertices
-            glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_BYTE, 0)
+            glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_SHORT, 0)
              
             // Put everything back to default (deselect)
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
