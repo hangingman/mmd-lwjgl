@@ -1,22 +1,22 @@
 package jp.gr.java_conf.hangedman.mmd
 
+import jp.gr.java_conf.hangedman.lwjgl.Matrix4f
+import jp.gr.java_conf.hangedman.lwjgl.createProjectionMatrix
+import jp.gr.java_conf.hangedman.mmd.Main.Companion.cleanup
+import jp.gr.java_conf.hangedman.mmd.Main.Companion.enter
+import jp.gr.java_conf.hangedman.mmd.Main.Companion.render
+import jp.gr.java_conf.hangedman.mmd.Main.Companion.update
 import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.fragmentSource
 import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.height
 import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.title
 import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.vertexSource
 import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.width
-import jp.gr.java_conf.hangedman.mmd.Main.Companion.enter
-import jp.gr.java_conf.hangedman.mmd.Main.Companion.initVao
-import jp.gr.java_conf.hangedman.mmd.Main.Companion.render
-import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.matModel
-import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.matProj
-import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.matView
-import jp.gr.java_conf.hangedman.mmd.pmd.PmdStruct
-import org.lwjgl.BufferUtils
 import org.lwjgl.Version
-import org.lwjgl.glfw.GLFW
+import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWVidMode
-import org.lwjgl.opengl.*
+import org.lwjgl.opengl.GL
+import org.lwjgl.opengl.GL33.*
+import org.lwjgl.opengl.GLUtil
 import org.lwjgl.system.MemoryUtil.NULL
 import org.slf4j.LoggerFactory
 import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J
@@ -24,162 +24,183 @@ import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J
 
 fun main(args: Array<String>) {
     println("Hello, LWJGL - ${Version.getVersion()} !")
-    println("       OpenGL - ${GL11.GL_VERSION} !")
-    println("       GLFW - ${GLFW.glfwGetVersionString()} !")
+    println("       OpenGL - ${GL_VERSION} !")
+    println("       GLFW - ${glfwGetVersionString()} !")
 
-    val (window, shader, attribVertex) = enter()
+    val window = enter()
     val pmdStruct = PmdLoader.loadPmdFile("HatsuneMiku.pmd")
-    val (vArrayId, indexId) = initVao(window, attribVertex, pmdStruct)
 
-    while (!GLFW.glfwWindowShouldClose(window)) {
-        render(window, shader, vArrayId, indexId, attribVertex, pmdStruct)
+    while (!glfwWindowShouldClose(window)) {
+        update()
+        render()
+        glfwSwapBuffers(window)
+        glfwPollEvents()
     }
     // GLFWの終了処理
-    GLFW.glfwTerminate()
+    cleanup()
+    glfwTerminate()
 }
 
 class Main {
 
     companion object {
         private val logger = LoggerFactory.getLogger(this::class.java)
+        private var vao: Int? = null
+        private var vbo: Int? = null
+        private var shader: Int? = null
+        private var vertShaderObj: Int? = null
+        private var fragShaderObj: Int? = null
+        private var uniModel: Int? = null
+        private var modelMatrix = Matrix4f()
+
+        // テスト
+        fun createVertex() {
+            this.vao = glGenVertexArrays()
+            glBindVertexArray(this.vao!!)
+
+            // 3次元座標xyzと色RGBで1頂点情報
+            val vertices = floatArrayOf(
+                0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f,   // 赤
+                -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, // 緑
+                0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f   // 青
+            )
+            this.vbo = glGenBuffers()
+            glBindBuffer(GL_ARRAY_BUFFER, this.vbo!!)
+            glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW)
+        }
 
         // 初期化してシェーダーを返す
-        fun enter(): Triple<Long, Int, Int> {
+        fun enter(): Long {
             // GLFW初期化
-            GLFW.glfwInit()
-            GLFW.glfwDefaultWindowHints()
-            GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_TRUE)
-            GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, GLFW.GLFW_TRUE)
-            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3)
-            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 2)
-            GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE)
-            GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GLFW.GLFW_TRUE)
+            glfwInit()
+            glfwDefaultWindowHints()
+            glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE)
+            glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE)
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE)
 
             // ウィンドウ生成
-            val window: Long = GLFW.glfwCreateWindow(width, height, title, 0, 0)
+            val window: Long = glfwCreateWindow(width, height, title, 0, 0)
             if (window == NULL) {
                 // 生成に失敗
-                GLFW.glfwTerminate()
+                glfwTerminate()
             }
 
-            GLFW.glfwSetWindowAspectRatio(window, 1, 1)
-            val videoMode: GLFWVidMode = GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor())
+            glfwSetWindowAspectRatio(window, 1, 1)
+            val videoMode: GLFWVidMode = glfwGetVideoMode(glfwGetPrimaryMonitor())
                     ?: throw IllegalStateException("Failed to get video mode...")
-            GLFW.glfwSetWindowPos(window,
+            glfwSetWindowPos(window,
                     (videoMode.width() - width) / 2,
                     (videoMode.height() - height) / 2
             )
 
             // コンテキストの作成
-            GLFW.glfwMakeContextCurrent(window)
-            GLFW.glfwSwapInterval(1)
+            glfwMakeContextCurrent(window)
+            glfwSwapInterval(1)
             GL.createCapabilities()
 
             SysOutOverSLF4J.sendSystemOutAndErrToSLF4J()
             GLUtil.setupDebugMessageCallback(System.out)
 
-            val shader = makeShader(vertexSource, fragmentSource)
-            val attribVertex = GL20.glGetAttribLocation(shader, "vertex")
-            val fb = BufferUtils.createFloatBuffer(16)
+            // ここから描画情報の読み込み
+            createVertex()
+            makeShader(vertexSource, fragmentSource)
 
-            GL20.glUniformMatrix4fv(GL20.glGetUniformLocation(shader,"projection"), false, matProj.get(fb))
-            GL20.glUniformMatrix4fv(GL20.glGetUniformLocation(shader,"view"), false, matView.get(fb))
-            GL20.glUniformMatrix4fv(GL20.glGetUniformLocation(shader,"model"), false, matModel.get(fb))
-            GL20.glUseProgram(0)
-            return Triple(window, shader, attribVertex)
+            val floatSize = 4
+            // 頂点シェーダーのinパラメータ"position"と対応
+            val posAttrib = glGetAttribLocation(this.shader!!, "position")
+            glEnableVertexAttribArray(posAttrib)
+            glVertexAttribPointer(posAttrib, 3, GL_FLOAT, false, 6 * floatSize, 0)
+
+            // 頂点シェーダーのinパラメータ"color"と対応
+            val colAttrib = glGetAttribLocation(this.shader!!, "color")
+            glEnableVertexAttribArray(colAttrib)
+            glVertexAttribPointer(colAttrib, 3, GL_FLOAT, false, 6 * floatSize, (3 * floatSize).toLong())
+
+            // 頂点シェーダーのグローバルGLSL変数"model"の位置を保持しておく
+            // 毎フレーム設定するので
+            this.uniModel = glGetUniformLocation(this.shader!!, "model")
+    
+            // 頂点シェーダーのグローバルGLSL変数"view"に設定
+            val viewMatrix = Matrix4f()
+            viewMatrix.identity(viewMatrix)
+
+            val uniView = glGetUniformLocation(this.shader!!, "view")
+            glUniformMatrix4fv(uniView, false, viewMatrix.value)
+    
+            // 頂点シェーダーのグローバルGLSL変数"projection"に設定
+            val projectionMatrix = createProjectionMatrix()
+            val uniProjection = glGetUniformLocation(this.shader!!, "projection")
+            glUniformMatrix4fv(uniProjection, false, projectionMatrix.value)
+
+
+            return window
         }
 
-        fun render(window: Long, shader: Int, vArrayId: Int, indexId: Int, attribVertex: Int, pmdStruct: PmdStruct) {
-            // バッファのクリア
-            GL11.glClearColor(0.2F, 0.2F, 0.2F, 0.0F)
-            GL11.glClear(GL11.GL_COLOR_BUFFER_BIT)
-            GL20.glUseProgram(shader)
-
-            GL30.glBindVertexArray(vArrayId)
-            GL20.glEnableVertexAttribArray(attribVertex)
-            GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, indexId)
-
-            GL11.glDrawElements(GL11.GL_TRIANGLES, pmdStruct.faceVertCount, GL11.GL_UNSIGNED_SHORT, 0)
-
-            GL20.glDisableVertexAttribArray(attribVertex)
-            GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0)
-
-            GL30.glBindVertexArray(0)
-            GL20.glUseProgram(0)
-
-            // ダブルバッファのスワップ
-            GLFW.glfwSwapBuffers(window)
-            GLFW.glfwPollEvents()
-        }
-
-        private fun makeShader(vertexSource: String, fragmentSource: String): Int {
+        private fun makeShader(vertexSource: String, fragmentSource: String) {
             // シェーダーオブジェクト作成
-            val vertShaderObj = GL20.glCreateShader(GL20.GL_VERTEX_SHADER)
-            val fragShaderObj = GL20.glCreateShader(GL20.GL_FRAGMENT_SHADER)
+            this.vertShaderObj = glCreateShader(GL_VERTEX_SHADER)
+            this.fragShaderObj = glCreateShader(GL_FRAGMENT_SHADER)
 
             // シェーダーのソースプログラムの読み込み
-            readShaderSource(vertShaderObj, vertexSource)
-            readShaderSource(fragShaderObj, fragmentSource)
+            readShaderSource(this.vertShaderObj!!, vertexSource)
+            readShaderSource(this.fragShaderObj!!, fragmentSource)
 
             // バーテックスシェーダーのソースプログラムのコンパイル
-            GL20.glCompileShader(vertShaderObj)
+            glCompileShader(this.vertShaderObj!!)
+            if (glGetShaderi(this.vertShaderObj!!, GL_COMPILE_STATUS) != GL_TRUE) {
+                throw IllegalStateException("Failed to compile vertex shader...")
+            }
             // フラグメントシェーダーのソースプログラムのコンパイル
-            GL20.glCompileShader(fragShaderObj)
+            glCompileShader(this.fragShaderObj!!)
+            if (glGetShaderi(this.fragShaderObj!!, GL_COMPILE_STATUS) != GL_TRUE) {
+                throw IllegalStateException("Failed to compile fragment shader...")
+            }
 
             // プログラムオブジェクトの作成
-            val shader = GL20.glCreateProgram()
+            this.shader = glCreateProgram()
             // シェーダーオブジェクトのシェーダープログラムへの登録
-            GL20.glAttachShader(shader, vertShaderObj)
-            GL20.glAttachShader(shader, fragShaderObj)
-            // シェーダーオブジェクトの削除
-            GL20.glDeleteShader(vertShaderObj)
-            GL20.glDeleteShader(fragShaderObj)
+            glAttachShader(this.shader!!, this.vertShaderObj!!)
+            glAttachShader(this.shader!!, this.fragShaderObj!!)
             // シェーダーにデータの位置をバインド
-            GL30.glBindFragDataLocation(shader, 0, "fragColor")
-            // シェーダープログラムのリンク
-            GL20.glLinkProgram(shader)
-            GL20.glUseProgram(shader)
+            glBindFragDataLocation(this.shader!!, 0, "fragColor")
 
-            return shader
+            // シェーダープログラムのリンクと実行
+            glLinkProgram(this.shader!!)
+            glUseProgram(this.shader!!)
         }
 
         private fun readShaderSource(shaderObj: Int, shaderSrc: String) {
             logger.debug("shader source: \n$shaderSrc")
-            GL20.glShaderSource(shaderObj, shaderSrc)
+            glShaderSource(shaderObj, shaderSrc)
         }
 
-        fun initVao(window: Long, attribVertex: Int, pmdStruct: PmdStruct): Pair<Int, Int> {
-            val verticeBuffer = BufferUtils.createFloatBuffer(pmdStruct.vertCount*3)
+        fun update() {
+            // 1秒で1回転
+            val angle = 360 * (glfwGetTime() % 1).toFloat()
+            Matrix4f.rotateY(this.modelMatrix, angle);
+        }
 
-            // vertexは構造が違うため単純なArrayに変換する
-            val vertexFloatArray = pmdStruct.vertex!!
-                    .map { v -> v.pos }
-                    .flatMap {
-                        fArray -> mutableListOf<Float>().also { it.addAll(fArray.asList()) }
-                    }.toFloatArray()
-
-            val indexBuffer = BufferUtils.createShortBuffer(pmdStruct.faceVertCount)
-            val vArrayId = GL30.glGenVertexArrays()
-            val vBufferId = GL15.glGenBuffers()
-            val indexId = GL15.glGenBuffers()
-
-            verticeBuffer.put(vertexFloatArray).flip()
-            indexBuffer.put(pmdStruct.faceVertIndex).flip()
-            GL30.glBindVertexArray(vArrayId)
-
-            // Vertex Buffer Object
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vBufferId)
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, verticeBuffer, GL15.GL_STATIC_DRAW)
-            GL20.glVertexAttribPointer(attribVertex,3, GL11.GL_FLOAT, false, 0, 0)
-
-            // Element Buffer Object
-            GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, indexId)
-            GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indexBuffer, GL15.GL_STATIC_DRAW)
-
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0)
-            GL30.glBindVertexArray(0)
-
-            return vArrayId to indexId
+        fun render() {
+            glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+    
+            glBindVertexArray(this.vao!!)
+            glUseProgram(this.shader!!)
+    
+            // updateメソッドで求めた回転行列をグローバルGLSL変数に設定
+            glUniformMatrix4fv(this.uniModel!!, false, this.modelMatrix.value)
+    
+            glDrawArrays(GL_TRIANGLES, 0, 3)
+        }
+        
+        fun cleanup() {
+            glDeleteVertexArrays(this.vao!!)
+            glDeleteBuffers(this.vbo!!)
+            glDeleteShader(this.vertShaderObj!!)
+            glDeleteShader(this.fragShaderObj!!)
+            glDeleteProgram(this.shader!!)
         }
     }
 }

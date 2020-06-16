@@ -8,48 +8,45 @@ object MmdCljConstants {
     const val height = 480
     const val title = "Load PMD file testing"
 
+    // 頂点シェーダのソース
     const val vertexSource = """
-        #version 150
+        #version 330
         
-        in  vec3 vertex;
-        uniform  mat4 view;
-        uniform  mat4 model;
-        uniform  mat4 projection;
+        // 頂点情報
+        in vec3 position;
+        in vec3 color;
         
-        void main () {
-            gl_Position = projection * view * model * vec4(vertex, 1);
+        // 次のフラグメントシェーダーに渡す頂点カラー
+        out vec3 vertexColor;
+        
+        // プログラムから指定されるグローバルGLSL変数
+        uniform mat4 model;
+        uniform mat4 view;
+        uniform mat4 projection;
+        
+        void main() {
+            // フラグメントシェーダーには頂点の色をそのまま渡す
+            vertexColor = color;
+            // ModelViewProjection行列を求める
+            mat4 mvp = projection * view * model;
+            // gl_Positionが最終的な頂点座標
+            gl_Position = mvp * vec4(position, 1.0);
         }
     """
 
+    // フラグメントシェーダのソース
     const val fragmentSource = """
-        #version 150
+        #version 330
         
+        // 頂点シェーダーから渡された頂点カラー
+        in vec3 vertexColor;
+        // フラグメントシェーダから出力する色
         out vec4 fragColor;
-
-        void main () {
-            fragColor = vec4(0.0, 1.0, 0.0, 1.0);"
-            // gl_FragColor = vec4(0.1,0.4,0.9,1.0);" <-- エラー発生
+        
+        void main() {
+            // 頂点カラーをそのまま出力
+            fragColor = vec4(vertexColor, 1.0);
         }
     """
 
-    val matProj = Matrix4f().apply {
-        this.frustum(
-                (-width / 2.0).toFloat(),
-                (width / 2.0).toFloat(),
-                (-height / 2.0).toFloat(),
-                (height / 2.0).toFloat(),
-                (- 100.0).toFloat(),
-                100.0F
-        )
-    }
-
-    val matModel = Matrix4f().apply {
-        this.translate(120.0F, -50.0F, 50.0F)
-        this.scale(100.0F)
-        this.rotate((Math.PI / 6.0).toFloat(), 1.0F, 1.0F, 1.0F)
-    }
-
-    val matView = Matrix4f().apply {
-        this.lookAt(0F, 0F, 200F, 0F, 0F, 0F, 0F, 1F, 0F)
-    }
 }
