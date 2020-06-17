@@ -1,6 +1,6 @@
 package jp.gr.java_conf.hangedman.mmd
 
-object MmdCljConstants {
+object MmdLwjglConstants {
 
     const val width = 640
     const val height = 480
@@ -12,10 +12,10 @@ object MmdCljConstants {
         
         // 頂点情報
         in vec3 position;
-        in vec3 color;
+        in vec4 color;
         
         // 次のフラグメントシェーダーに渡す頂点カラー
-        out vec3 vertexColor;
+        out vec4 vertexColor;
         
         // プログラムから指定されるグローバルGLSL変数
         uniform mat4 model;
@@ -37,14 +37,13 @@ object MmdCljConstants {
         #version 330
         
         // 頂点シェーダーから渡された頂点カラー
-        in vec3 vertexColor;
+        in vec4 vertexColor;
         // フラグメントシェーダから出力する色
         out vec4 fragColor;
         
         void main() {
             // 頂点カラーをそのまま出力
-            //fragColor = vec4(vertexColor, 1.0);
-            fragColor = vec4(0.0, 1.0, 0.0, 1.0);
+            fragColor = vertexColor;
         }
     """
 

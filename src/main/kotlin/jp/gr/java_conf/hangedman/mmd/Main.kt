@@ -6,11 +6,11 @@ import jp.gr.java_conf.hangedman.mmd.Main.Companion.cleanup
 import jp.gr.java_conf.hangedman.mmd.Main.Companion.enter
 import jp.gr.java_conf.hangedman.mmd.Main.Companion.render
 import jp.gr.java_conf.hangedman.mmd.Main.Companion.update
-import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.fragmentSource
-import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.height
-import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.title
-import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.vertexSource
-import jp.gr.java_conf.hangedman.mmd.MmdCljConstants.width
+import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.fragmentSource
+import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.height
+import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.title
+import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.vertexSource
+import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.width
 import jp.gr.java_conf.hangedman.mmd.pmd.PmdStruct
 import org.lwjgl.BufferUtils
 import org.lwjgl.Version
@@ -47,9 +47,9 @@ class Main {
 
     companion object {
         private val logger = LoggerFactory.getLogger(this::class.java)
-        private var vao: Int? = null
-        private var vbo: Int? = null
-        private var vboi: Int? = null
+        private var vao: Int = 0
+        private var vbo: IntArray = intArrayOf(0, 0)
+        private var vboi: Int = 0
         private var indicesCount: Int = 0
 
         private var shader: Int? = null
@@ -70,20 +70,33 @@ class Main {
                     0.5f, 0.5f, 0f      // Right left       ID: 3
             ) */
 
-            var vertices = pmdStruct.vertex!!
+            val vertices = pmdStruct.vertex!!
                     .map { v -> v.pos }
                     .flatMap { fArray ->
                         mutableListOf<Float>().also {
-                            it.addAll(fArray.asList().map { p -> (p/20) }.toList())
+                            it.addAll(fArray.asList().map { p -> (p/22) }.toList())
                         }
                     }.toFloatArray()
 
+            val colors = pmdStruct.material!!
+                    .flatMap { m ->
+                        val fList = mutableListOf<Float>()
+                        repeat(m.faceVertCount) {
+                            fList.addAll(m.diffuseColor.toList())
+                            fList.add(m.alpha)
+                        }
+                        fList
+                   }.toFloatArray()
 
             // Sending data to OpenGL requires the usage of (flipped) byte buffers
             val verticesBuffer = BufferUtils.createFloatBuffer(vertices.size)
             verticesBuffer.put(vertices)
             verticesBuffer.flip()
-             
+
+            val colorsBuffer = BufferUtils.createFloatBuffer(colors.size)
+            colorsBuffer.put(colors)
+            colorsBuffer.flip()
+
             // OpenGL expects to draw vertices in counter clockwise order by default
             /**
             val indices = shortArrayOf(
@@ -104,24 +117,33 @@ class Main {
             // Create a new Vertex Array Object in memory and select it (bind)
             // A VAO can have up to 16 attributes (VBO's) assigned to it by default
             this.vao = glGenVertexArrays()
-            glBindVertexArray(this.vao!!)
+            glBindVertexArray(this.vao)
              
             // Create a new Vertex Buffer Object in memory and select it (bind)
             // A VBO is a collection of Vectors which in this case resemble the location of each vertex.
-            this.vbo = glGenBuffers()
-            glBindBuffer(GL_ARRAY_BUFFER, this.vbo!!)
+            this.vbo[0] = glGenBuffers()
+            glBindBuffer(GL_ARRAY_BUFFER, this.vbo[0])
             glBufferData(GL_ARRAY_BUFFER, verticesBuffer, GL_STATIC_DRAW)
             // Put the VBO in the attributes list at index 0
             glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0)
             // Deselect (bind to 0) the VBO
             glBindBuffer(GL_ARRAY_BUFFER, 0)
-             
+
+            this.vbo[1] = glGenBuffers()
+            glBindBuffer(GL_ARRAY_BUFFER, this.vbo[1])
+            glBufferData(GL_ARRAY_BUFFER, colorsBuffer, GL_STATIC_DRAW)
+            // Put the VBO in the attributes list at index 1
+            glVertexAttribPointer(1, 4, GL_FLOAT, false, 0, 0)
+            glEnableVertexAttribArray(1)
+            // Deselect (bind to 0) the VBO
+            glBindBuffer(GL_ARRAY_BUFFER, 0)
+
             // Deselect (bind to 0) the VAO
             glBindVertexArray(0)
              
             // Create a new VBO for the indices and select it (bind)
             this.vboi = glGenBuffers()
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.vboi!!)
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.vboi)
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL_STATIC_DRAW)
             // Deselect (bind to 0) the VBO
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)            
@@ -175,11 +197,6 @@ class Main {
             val posAttrib = glGetAttribLocation(this.shader!!, "position")
             glEnableVertexAttribArray(posAttrib)
             glVertexAttribPointer(posAttrib, 3, GL_FLOAT, false, 6 * floatSize, 0)
-
-            // 頂点シェーダーのinパラメータ"color"と対応
-            //val colAttrib = glGetAttribLocation(this.shader!!, "color")
-            //glEnableVertexAttribArray(colAttrib)
-            //glVertexAttribPointer(colAttrib, 3, GL_FLOAT, false, 6 * floatSize, (3 * floatSize).toLong())
 
             // 頂点シェーダーのグローバルGLSL変数"model"の位置を保持しておく
             // 毎フレーム設定するので
@@ -249,11 +266,11 @@ class Main {
             glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
              
             // Bind to the VAO that has all the information about the vertices
-            glBindVertexArray(this.vao!!)
+            glBindVertexArray(this.vao)
             glEnableVertexAttribArray(0)
              
             // Bind to the index VBO that has all the information about the order of the vertices
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.vboi!!)
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.vboi)
 
             glUseProgram(this.shader!!)
             // updateメソッドで求めた回転行列をグローバルGLSL変数に設定
@@ -269,9 +286,10 @@ class Main {
         }
         
         fun cleanup() {
-            glDeleteVertexArrays(this.vao!!)
-            glDeleteBuffers(this.vbo!!)
-            glDeleteBuffers(this.vboi!!)
+            glDeleteVertexArrays(this.vao)
+            glDeleteBuffers(this.vbo[0])
+            glDeleteBuffers(this.vbo[1])
+            glDeleteBuffers(this.vboi)
 
             glDeleteShader(this.vertShaderObj!!)
             glDeleteShader(this.fragShaderObj!!)
