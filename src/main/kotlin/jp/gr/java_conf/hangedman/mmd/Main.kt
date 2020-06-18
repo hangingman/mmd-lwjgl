@@ -48,7 +48,7 @@ class Main {
     companion object {
         private val logger = LoggerFactory.getLogger(this::class.java)
         private var vao: Int = 0
-        private var vbo: IntArray = intArrayOf(0, 0)
+        private var vbo: IntArray = intArrayOf(0, 0, 0) // 頂点, 色, 法線
         private var vboi: Int = 0
         private var indicesCount: Int = 0
 
@@ -70,32 +70,67 @@ class Main {
                     0.5f, 0.5f, 0f      // Right left       ID: 3
             ) */
 
+            // 頂点リスト
             val vertices = pmdStruct.vertex!!
                     .map { v -> v.pos }
                     .flatMap { fArray ->
                         mutableListOf<Float>().also {
+                            // TODO: windowの拡大縮小ができるまでは 22 で割って小さくしている
                             it.addAll(fArray.asList().map { p -> (p/22) }.toList())
                         }
                     }.toFloatArray()
 
-            val colors = pmdStruct.material!!
-                    .flatMap { m ->
-                        val fList = mutableListOf<Float>()
-                        repeat(m.faceVertCount) {
-                            fList.addAll(m.diffuseColor.toList())
-                            fList.add(m.alpha)
-                        }
-                        fList
-                   }.toFloatArray()
+            // 面頂点リストの適用合計値に対してどの材質リストを使うかを保持する連想配列
+            val materialRanged = pmdStruct.material!!
+                    .mapIndexed { i, m ->
+                        val materialRanged = pmdStruct.material!!.filterIndexed { index, material ->
+                            index <= i
+                        }.map{ it.faceVertCount }.sum()
+                        materialRanged to m
+                    }
 
-            // Sending data to OpenGL requires the usage of (flipped) byte buffers
+            // 頂点に対してどの材質リストを使うかを保持する連想配列
+            val vertexMaterialMap = pmdStruct.vertex!!
+                    .mapIndexed { index, _ ->
+                        val faceVertIndex = pmdStruct.faceVertIndex!!.indexOfFirst{ faceVert -> faceVert==index.toShort() }
+                        val material = materialRanged.find{ m -> m.first >= faceVertIndex }
+                        index to material!!.second
+                    }
+
+            // 頂点に対する色を設定する
+            val colors = pmdStruct.vertex!!
+                    .mapIndexed { i, _ ->
+                        val floatList = mutableListOf<Float>()
+                        val m = vertexMaterialMap.find { (range, _) -> i <= range }!!.second
+                        floatList.addAll(m.diffuseColor.toList())
+                        floatList.add(m.alpha)
+                        floatList
+                   }.flatten().toFloatArray()
+
+            val normals = pmdStruct.vertex!!
+                    .map { v -> v.normalVec }
+                    .flatMap { fArray ->
+                        mutableListOf<Float>().also {
+                            it.addAll(fArray.asList())
+                        }
+                    }.toFloatArray()
+
+            // 頂点
             val verticesBuffer = BufferUtils.createFloatBuffer(vertices.size)
             verticesBuffer.put(vertices)
             verticesBuffer.flip()
+            println("vertices size " + vertices.size)
 
+            // 色
             val colorsBuffer = BufferUtils.createFloatBuffer(colors.size)
             colorsBuffer.put(colors)
             colorsBuffer.flip()
+            println("colors size " + colors.size / 4)
+
+            // 法線
+            val normalsBuffer = BufferUtils.createFloatBuffer(normals.size)
+            normalsBuffer.put(normals)
+            normalsBuffer.flip()
 
             // OpenGL expects to draw vertices in counter clockwise order by default
             /**
@@ -135,6 +170,15 @@ class Main {
             // Put the VBO in the attributes list at index 1
             glVertexAttribPointer(1, 4, GL_FLOAT, false, 0, 0)
             glEnableVertexAttribArray(1)
+            // Deselect (bind to 0) the VBO
+            glBindBuffer(GL_ARRAY_BUFFER, 0)
+
+            this.vbo[2] = glGenBuffers()
+            glBindBuffer(GL_ARRAY_BUFFER, this.vbo[2])
+            glBufferData(GL_ARRAY_BUFFER, normalsBuffer, GL_STATIC_DRAW)
+            // Put the VBO in the attributes list at index 2
+            glVertexAttribPointer(2, 3, GL_FLOAT, false, 0, 0)
+            glEnableVertexAttribArray(2)
             // Deselect (bind to 0) the VBO
             glBindBuffer(GL_ARRAY_BUFFER, 0)
 
@@ -214,6 +258,11 @@ class Main {
             val uniProjection = glGetUniformLocation(this.shader!!, "projection")
             glUniformMatrix4fv(uniProjection, false, projectionMatrix.value)
 
+            val lightFloatBuffer = BufferUtils.createFloatBuffer(4)
+            lightFloatBuffer.put(floatArrayOf(0f, 1f, 0f, 0f))
+            lightFloatBuffer.flip()
+            val uniLightDir = glGetUniformLocation(this.shader!!, "wLightDir")
+            glUniformMatrix3fv(uniLightDir, false, lightFloatBuffer)
 
             return window
         }
@@ -252,7 +301,7 @@ class Main {
         }
 
         private fun readShaderSource(shaderObj: Int, shaderSrc: String) {
-            logger.debug("shader source: \n$shaderSrc")
+            //logger.debug("shader source: \n$shaderSrc")
             glShaderSource(shaderObj, shaderSrc)
         }
 
@@ -289,6 +338,7 @@ class Main {
             glDeleteVertexArrays(this.vao)
             glDeleteBuffers(this.vbo[0])
             glDeleteBuffers(this.vbo[1])
+            glDeleteBuffers(this.vbo[2])
             glDeleteBuffers(this.vboi)
 
             glDeleteShader(this.vertShaderObj!!)
