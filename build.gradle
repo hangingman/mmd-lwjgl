@@ -37,10 +37,9 @@ switch (OperatingSystem.current()) {
         break
     case OperatingSystem.MAC_OS:
         project.ext.lwjglNatives = "natives-macos"
+        applicationDefaultJvmArgs = ["-XstartOnFirstThread"]
         break
 }
-
-applicationDefaultJvmArgs = ["-XstartOnFirstThread"]
 
 dependencies {
     implementation "uk.org.lidalia:sysout-over-slf4j:1.0.2"
