@@ -33,12 +33,10 @@ object MmdLwjglConstants {
             mat4 mit = transpose(inverse(model));
             vec3 n = normalize(mat3(mit) * normal); // 法線のm変換
             float nl = clamp(dot(n, normalize(-wLightDir)), 0.0, 1.0); // 法線とライトの内積を算出
-            vec3 c = color.rgb * nl; // 最終色を算出
+            vec3 c = color.rgb * nl; // 最終色を算出 
+            c = clamp(c, 0.0, 1.0); // 0.0 ~ 1.0に色を収める
             
-            //c = clamp(c, vec4(0.0), vec4(1.0)); // 0.0 ~ 1.0に色を収める
-            vec3 tmp = clamp(c, 0.0, 1.0); // 0.0 ~ 1.0に色を収める
-            
-            //vertexColor = vec4(tmp, color.a);
+            //vertexColor = vec4(c, color.a);
             vertexColor = color;
             
             // gl_Positionが最終的な頂点座標

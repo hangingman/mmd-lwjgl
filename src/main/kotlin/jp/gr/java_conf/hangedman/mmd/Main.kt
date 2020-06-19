@@ -64,10 +64,10 @@ class Main {
 
             /**
             val vertices = floatArrayOf(
-                    -0.5f, 0.5f, 0f,    // Left top         ID: 0
-                    -0.5f, -0.5f, 0f,   // Left bottom      ID: 1
-                    0.5f, -0.5f, 0f,    // Right bottom     ID: 2
-                    0.5f, 0.5f, 0f      // Right left       ID: 3
+            -0.5f, 0.5f, 0f,    // Left top         ID: 0
+            -0.5f, -0.5f, 0f,   // Left bottom      ID: 1
+            0.5f, -0.5f, 0f,    // Right bottom     ID: 2
+            0.5f, 0.5f, 0f      // Right left       ID: 3
             ) */
 
             // 頂点リスト
@@ -76,7 +76,7 @@ class Main {
                     .flatMap { fArray ->
                         mutableListOf<Float>().also {
                             // TODO: windowの拡大縮小ができるまでは 22 で割って小さくしている
-                            it.addAll(fArray.asList().map { p -> (p/22) }.toList())
+                            it.addAll(fArray.asList().map { p -> (p / 18) }.toList())
                         }
                     }.toFloatArray()
 
@@ -85,15 +85,15 @@ class Main {
                     .mapIndexed { i, m ->
                         val materialRanged = pmdStruct.material!!.filterIndexed { index, material ->
                             index <= i
-                        }.map{ it.faceVertCount }.sum()
+                        }.map { it.faceVertCount }.sum()
                         materialRanged to m
                     }
 
             // 頂点に対してどの材質リストを使うかを保持する連想配列
             val vertexMaterialMap = pmdStruct.vertex!!
                     .mapIndexed { index, _ ->
-                        val faceVertIndex = pmdStruct.faceVertIndex!!.indexOfFirst{ faceVert -> faceVert==index.toShort() }
-                        val material = materialRanged.find{ m -> m.first >= faceVertIndex }
+                        val faceVertIndex = pmdStruct.faceVertIndex!!.indexOfFirst { faceVert -> faceVert == index.toShort() }
+                        val material = materialRanged.find { m -> m.first >= faceVertIndex }
                         index to material!!.second
                     }
 
@@ -105,7 +105,7 @@ class Main {
                         floatList.addAll(m.diffuseColor.toList())
                         floatList.add(m.alpha)
                         floatList
-                   }.flatten().toFloatArray()
+                    }.flatten().toFloatArray()
 
             val normals = pmdStruct.vertex!!
                     .map { v -> v.normalVec }
@@ -135,10 +135,10 @@ class Main {
             // OpenGL expects to draw vertices in counter clockwise order by default
             /**
             val indices = shortArrayOf(
-                    // Left bottom triangle
-                    0, 1, 2,
-                    // Right top triangle
-                    2, 3, 0
+            // Left bottom triangle
+            0, 1, 2,
+            // Right top triangle
+            2, 3, 0
             )
             indicesCount = indices.size */
 
@@ -148,12 +148,12 @@ class Main {
             val indicesBuffer = BufferUtils.createShortBuffer(indicesCount)
             indicesBuffer.put(indices)
             indicesBuffer.flip()
-             
+
             // Create a new Vertex Array Object in memory and select it (bind)
             // A VAO can have up to 16 attributes (VBO's) assigned to it by default
             this.vao = glGenVertexArrays()
             glBindVertexArray(this.vao)
-             
+
             // Create a new Vertex Buffer Object in memory and select it (bind)
             // A VBO is a collection of Vectors which in this case resemble the location of each vertex.
             this.vbo[0] = glGenBuffers()
@@ -184,13 +184,13 @@ class Main {
 
             // Deselect (bind to 0) the VAO
             glBindVertexArray(0)
-             
+
             // Create a new VBO for the indices and select it (bind)
             this.vboi = glGenBuffers()
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.vboi)
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL_STATIC_DRAW)
             // Deselect (bind to 0) the VBO
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)            
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
         }
 
         // 初期化してシェーダーを返す
@@ -232,6 +232,10 @@ class Main {
             glClearColor(0.4f, 0.6f, 0.9f, 0f)
             glViewport(0, 0, width, height)
 
+            // Zバッファ
+            glEnable(GL_DEPTH_TEST)  // デプステストを有効にする
+            glDepthFunc(GL_LESS)     // 前のものよりもカメラに近ければ、フラグメントを受け入れる
+
             // ここから描画情報の読み込み
             createVertex(pmdStruct)
             makeShader(vertexSource, fragmentSource)
@@ -245,14 +249,14 @@ class Main {
             // 頂点シェーダーのグローバルGLSL変数"model"の位置を保持しておく
             // 毎フレーム設定するので
             this.uniModel = glGetUniformLocation(this.shader!!, "model")
-    
+
             // 頂点シェーダーのグローバルGLSL変数"view"に設定
             val viewMatrix = Matrix4f()
             viewMatrix.identity(viewMatrix)
 
             val uniView = glGetUniformLocation(this.shader!!, "view")
             glUniformMatrix4fv(uniView, false, viewMatrix.value)
-    
+
             // 頂点シェーダーのグローバルGLSL変数"projection"に設定
             val projectionMatrix = createProjectionMatrix()
             val uniProjection = glGetUniformLocation(this.shader!!, "projection")
@@ -313,27 +317,27 @@ class Main {
 
         fun render() {
             glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
-             
+
             // Bind to the VAO that has all the information about the vertices
             glBindVertexArray(this.vao)
             glEnableVertexAttribArray(0)
-             
+
             // Bind to the index VBO that has all the information about the order of the vertices
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.vboi)
 
             glUseProgram(this.shader!!)
             // updateメソッドで求めた回転行列をグローバルGLSL変数に設定
             glUniformMatrix4fv(this.uniModel!!, false, this.modelMatrix.value)
-             
+
             // Draw the vertices
             glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_SHORT, 0)
-             
+
             // Put everything back to default (deselect)
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
             glDisableVertexAttribArray(0)
             glBindVertexArray(0)
         }
-        
+
         fun cleanup() {
             glDeleteVertexArrays(this.vao)
             glDeleteBuffers(this.vbo[0])
