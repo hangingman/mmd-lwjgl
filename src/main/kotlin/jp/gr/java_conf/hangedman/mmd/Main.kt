@@ -1,7 +1,7 @@
 package jp.gr.java_conf.hangedman.mmd
 
-import jp.gr.java_conf.hangedman.lwjgl.Matrix4f
 import jp.gr.java_conf.hangedman.lwjgl.createProjectionMatrix
+import jp.gr.java_conf.hangedman.lwjgl.value
 import jp.gr.java_conf.hangedman.mmd.Main.Companion.cleanup
 import jp.gr.java_conf.hangedman.mmd.Main.Companion.enter
 import jp.gr.java_conf.hangedman.mmd.Main.Companion.render
@@ -12,6 +12,7 @@ import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.title
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.vertexSource
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.width
 import jp.gr.java_conf.hangedman.mmd.pmd.PmdStruct
+import org.joml.Matrix4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.Version
 import org.lwjgl.glfw.GLFW.*
@@ -30,12 +31,12 @@ fun main(args: Array<String>) {
     println("       GLFW - ${glfwGetVersionString()} !")
 
     val pmdStruct = PmdLoader.loadPmdFile("HatsuneMiku.pmd")
-    val window = enter(pmdStruct)
+    val windowId = enter(pmdStruct)
 
-    while (!glfwWindowShouldClose(window)) {
-        update()
+    while (!glfwWindowShouldClose(windowId)) {
+        update(windowId)
         render()
-        glfwSwapBuffers(window)
+        glfwSwapBuffers(windowId)
         glfwPollEvents()
     }
     // GLFWの終了処理
@@ -47,28 +48,34 @@ class Main {
 
     companion object {
         private val logger = LoggerFactory.getLogger(this::class.java)
+
+        // VAO, VBO, VBOI
         private var vao: Int = 0
         private var vbo: IntArray = intArrayOf(0, 0, 0) // 頂点, 色, 法線
         private var vboi: Int = 0
         private var indicesCount: Int = 0
 
+        // Shader
         private var shader: Int? = null
         private var vertShaderObj: Int? = null
         private var fragShaderObj: Int? = null
+
+        // モデルの位置など
+        // 水平角、-Z方向
+        private var horizontalAngle = 3.14f
+        // 鉛直角、0、水平線を眺めている
+        private var verticalAngle = 0.0f
+        // 初期視野
+        private var initialFoV = 45.0f
+        private var speed = 3.0f // 3 units / second
+        private var mouseSpeed = 0.005f
+        private var lastTime = glfwGetTime()
+
         private var uniModel: Int? = null
         private var modelMatrix = Matrix4f()
 
-        // テスト
+        // VAO, VBO, VBOIの読み込み
         fun createVertex(pmdStruct: PmdStruct) {
-            // Vertices, the order is not important.
-
-            /**
-            val vertices = floatArrayOf(
-            -0.5f, 0.5f, 0f,    // Left top         ID: 0
-            -0.5f, -0.5f, 0f,   // Left bottom      ID: 1
-            0.5f, -0.5f, 0f,    // Right bottom     ID: 2
-            0.5f, 0.5f, 0f      // Right left       ID: 3
-            ) */
 
             // 頂点リスト
             val vertices = pmdStruct.vertex!!
@@ -76,7 +83,7 @@ class Main {
                     .flatMap { fArray ->
                         mutableListOf<Float>().also {
                             // TODO: windowの拡大縮小ができるまでは 22 で割って小さくしている
-                            it.addAll(fArray.asList().map { p -> (p / 18) }.toList())
+                            it.addAll(fArray.asList().map { p -> (p / 10) }.toList())
                         }
                     }.toFloatArray()
 
@@ -133,15 +140,6 @@ class Main {
             normalsBuffer.flip()
 
             // OpenGL expects to draw vertices in counter clockwise order by default
-            /**
-            val indices = shortArrayOf(
-            // Left bottom triangle
-            0, 1, 2,
-            // Right top triangle
-            2, 3, 0
-            )
-            indicesCount = indices.size */
-
             val indices = pmdStruct.faceVertIndex
             indicesCount = pmdStruct.faceVertCount
 
@@ -246,28 +244,6 @@ class Main {
             glEnableVertexAttribArray(posAttrib)
             glVertexAttribPointer(posAttrib, 3, GL_FLOAT, false, 6 * floatSize, 0)
 
-            // 頂点シェーダーのグローバルGLSL変数"model"の位置を保持しておく
-            // 毎フレーム設定するので
-            this.uniModel = glGetUniformLocation(this.shader!!, "model")
-
-            // 頂点シェーダーのグローバルGLSL変数"view"に設定
-            val viewMatrix = Matrix4f()
-            viewMatrix.identity(viewMatrix)
-
-            val uniView = glGetUniformLocation(this.shader!!, "view")
-            glUniformMatrix4fv(uniView, false, viewMatrix.value)
-
-            // 頂点シェーダーのグローバルGLSL変数"projection"に設定
-            val projectionMatrix = createProjectionMatrix()
-            val uniProjection = glGetUniformLocation(this.shader!!, "projection")
-            glUniformMatrix4fv(uniProjection, false, projectionMatrix.value)
-
-            val lightFloatBuffer = BufferUtils.createFloatBuffer(4)
-            lightFloatBuffer.put(floatArrayOf(0f, 1f, 0f, 0f))
-            lightFloatBuffer.flip()
-            val uniLightDir = glGetUniformLocation(this.shader!!, "wLightDir")
-            glUniformMatrix3fv(uniLightDir, false, lightFloatBuffer)
-
             return window
         }
 
@@ -309,10 +285,60 @@ class Main {
             glShaderSource(shaderObj, shaderSrc)
         }
 
-        fun update() {
-            // 1秒で1回転
-            val angle = 360 * (glfwGetTime() % 1).toFloat()
-            Matrix4f.rotateY(this.modelMatrix, angle);
+        fun update(windowId: Long) {
+            // キーボードとマウスのインプットからMVP行列を計算する
+            computeMatricesFromInputs(windowId)
+
+            // 頂点シェーダーのグローバルGLSL変数"model"の位置を保持しておく
+            // 毎フレーム設定するので
+            this.uniModel = glGetUniformLocation(this.shader!!, "model")
+
+            // 頂点シェーダーのグローバルGLSL変数"view"に設定
+            val viewMatrix = Matrix4f().identity()
+
+            val uniView = glGetUniformLocation(this.shader!!, "view")
+            glUniformMatrix4fv(uniView, false, viewMatrix.value())
+
+            // 頂点シェーダーのグローバルGLSL変数"projection"に設定
+            val projectionMatrix = Matrix4f().createProjectionMatrix()
+            val uniProjection = glGetUniformLocation(this.shader!!, "projection")
+            glUniformMatrix4fv(uniProjection, false, projectionMatrix.value())
+
+            val lightFloatBuffer = BufferUtils.createFloatBuffer(4)
+            lightFloatBuffer.put(floatArrayOf(0f, 1f, 0f, 0f))
+            lightFloatBuffer.flip()
+            val uniLightDir = glGetUniformLocation(this.shader!!, "wLightDir")
+            glUniformMatrix3fv(uniLightDir, false, lightFloatBuffer)
+
+            // 1秒で1回転?
+            //val angle = 360 * (glfwGetTime() % 0.5).toFloat()
+            //this.modelMatrix = this.modelMatrix.rotateLocalY(angle)
+        }
+
+        private fun computeMatricesFromInputs(windowId: Long) {
+
+            val currentTime = glfwGetTime()
+            val deltaTime = (currentTime - lastTime).toFloat()
+            lastTime = currentTime
+
+            val windowXBuffer = BufferUtils.createIntBuffer(1)
+            val windowYBuffer = BufferUtils.createIntBuffer(1)
+            glfwGetWindowSize(windowId, windowXBuffer, windowYBuffer)
+            val windowXHalfPos = (windowXBuffer.get(0)/2).toDouble()
+            val windowYHalfPos = (windowYBuffer.get(0)/2).toDouble()
+
+            // マウスの位置を取得
+            val xBuffer = BufferUtils.createDoubleBuffer(1)
+            val yBuffer = BufferUtils.createDoubleBuffer(1)
+            glfwGetCursorPos(windowId, xBuffer, yBuffer)
+            val xpos = xBuffer.get(0)
+            val ypos = yBuffer.get(0)
+
+            horizontalAngle += mouseSpeed * deltaTime * (windowXHalfPos - xpos ).toFloat()
+            verticalAngle   += mouseSpeed * deltaTime * (windowYHalfPos - ypos ).toFloat()
+
+
+
         }
 
         fun render() {
@@ -327,7 +353,7 @@ class Main {
 
             glUseProgram(this.shader!!)
             // updateメソッドで求めた回転行列をグローバルGLSL変数に設定
-            glUniformMatrix4fv(this.uniModel!!, false, this.modelMatrix.value)
+            glUniformMatrix4fv(this.uniModel!!, false, this.modelMatrix.value())
 
             // Draw the vertices
             glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_SHORT, 0)
