@@ -2,8 +2,8 @@ package jp.gr.java_conf.hangedman.mmd
 
 object MmdLwjglConstants {
 
-    const val width = 640
-    const val height = 480
+    const val width = 800
+    const val height = 640
     const val title = "Load PMD file testing"
 
     // 頂点シェーダのソース

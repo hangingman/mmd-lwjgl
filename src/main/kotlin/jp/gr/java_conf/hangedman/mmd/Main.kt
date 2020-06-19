@@ -245,6 +245,12 @@ class Main {
             glEnable(GL_DEPTH_TEST)  // デプステストを有効にする
             glDepthFunc(GL_LESS)     // 前のものよりもカメラに近ければ、フラグメントを受け入れる
 
+            glEnable(GL_CULL_FACE)   // 視点に対して裏を向いている面を表示しないようにする
+            glCullFace(GL_BACK)
+
+            glEnable(GL_LIGHTING)    // OpenGLデフォルトの光源
+            glEnable(GL_LIGHT0)
+
             glfwSetScrollCallback(windowId, object : GLFWScrollCallback() {
                 override fun invoke(windowId: Long, dx: Double, dy: Double) {
                     mouseWheelVelocity = dy.toFloat()
@@ -332,8 +338,9 @@ class Main {
             glUniformMatrix3fv(uniLightDir, false, lightFloatBuffer)
 
             // 1秒で1回転?
-            //val angle = 360 * (glfwGetTime() % 1000).toFloat()
-            //this.modelMatrix = this.modelMatrix.rotateLocalY(angle)
+            //val angle = 360 * (glfwGetTime() % 1).toFloat()
+            val angle = (glfwGetTime() - lastTime).toFloat() * 30
+            this.modelMatrix = this.modelMatrix.rotateLocalY(angle)
         }
 
         private fun computeMatricesFromInputs(windowId: Long) {
