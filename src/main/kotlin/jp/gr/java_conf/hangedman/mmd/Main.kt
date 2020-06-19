@@ -12,10 +12,14 @@ import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.title
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.vertexSource
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.width
 import jp.gr.java_conf.hangedman.mmd.pmd.PmdStruct
+import org.joml.Math.cos
+import org.joml.Math.sin
 import org.joml.Matrix4f
+import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import org.lwjgl.Version
 import org.lwjgl.glfw.GLFW.*
+import org.lwjgl.glfw.GLFWScrollCallback
 import org.lwjgl.glfw.GLFWVidMode
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL33.*
@@ -61,15 +65,23 @@ class Main {
         private var fragShaderObj: Int? = null
 
         // モデルの位置など
+        private var position = Vector3f(0f, 0f, 5f)
         // 水平角、-Z方向
         private var horizontalAngle = 3.14f
+
         // 鉛直角、0、水平線を眺めている
         private var verticalAngle = 0.0f
+
         // 初期視野
         private var initialFoV = 45.0f
+        private var foV = initialFoV
+        private var mouseWheelVelocity = 0f
         private var speed = 3.0f // 3 units / second
         private var mouseSpeed = 0.005f
         private var lastTime = glfwGetTime()
+
+        private var direction = Vector3f()
+        private var up = Vector3f()
 
         private var uniModel: Int? = null
         private var modelMatrix = Matrix4f()
@@ -82,8 +94,7 @@ class Main {
                     .map { v -> v.pos }
                     .flatMap { fArray ->
                         mutableListOf<Float>().also {
-                            // TODO: windowの拡大縮小ができるまでは 22 で割って小さくしている
-                            it.addAll(fArray.asList().map { p -> (p / 10) }.toList())
+                            it.addAll(fArray.asList())
                         }
                     }.toFloatArray()
 
@@ -204,22 +215,22 @@ class Main {
             glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE)
 
             // ウィンドウ生成
-            val window: Long = glfwCreateWindow(width, height, title, 0, 0)
-            if (window == NULL) {
+            val windowId: Long = glfwCreateWindow(width, height, title, 0, 0)
+            if (windowId == NULL) {
                 // 生成に失敗
                 glfwTerminate()
             }
 
-            glfwSetWindowAspectRatio(window, 1, 1)
+            glfwSetWindowAspectRatio(windowId, 1, 1)
             val videoMode: GLFWVidMode = glfwGetVideoMode(glfwGetPrimaryMonitor())
                     ?: throw IllegalStateException("Failed to get video mode...")
-            glfwSetWindowPos(window,
+            glfwSetWindowPos(windowId,
                     (videoMode.width() - width) / 2,
                     (videoMode.height() - height) / 2
             )
 
             // コンテキストの作成
-            glfwMakeContextCurrent(window)
+            glfwMakeContextCurrent(windowId)
             glfwSwapInterval(1)
             GL.createCapabilities()
 
@@ -234,6 +245,14 @@ class Main {
             glEnable(GL_DEPTH_TEST)  // デプステストを有効にする
             glDepthFunc(GL_LESS)     // 前のものよりもカメラに近ければ、フラグメントを受け入れる
 
+            glfwSetScrollCallback(windowId, object : GLFWScrollCallback() {
+                override fun invoke(windowId: Long, dx: Double, dy: Double) {
+                    mouseWheelVelocity = dy.toFloat()
+                    foV -= (5 * mouseWheelVelocity)
+                    System.out.println("dy: $dy, foV: $foV")
+                }
+            })
+
             // ここから描画情報の読み込み
             createVertex(pmdStruct)
             makeShader(vertexSource, fragmentSource)
@@ -244,7 +263,7 @@ class Main {
             glEnableVertexAttribArray(posAttrib)
             glVertexAttribPointer(posAttrib, 3, GL_FLOAT, false, 6 * floatSize, 0)
 
-            return window
+            return windowId
         }
 
         private fun makeShader(vertexSource: String, fragmentSource: String) {
@@ -293,16 +312,18 @@ class Main {
             // 毎フレーム設定するので
             this.uniModel = glGetUniformLocation(this.shader!!, "model")
 
+            // 頂点シェーダーのグローバルGLSL変数"projection"に設定
+            val projectionMatrix = Matrix4f().createProjectionMatrix(foV)
+            val uniProjection = glGetUniformLocation(this.shader!!, "projection")
+            glUniformMatrix4fv(uniProjection, false, projectionMatrix.value())
+
             // 頂点シェーダーのグローバルGLSL変数"view"に設定
+            // TODO: このへんまだうまく動かない
             val viewMatrix = Matrix4f().identity()
+            //val viewMatrix = Matrix4f().lookAt(position, position.add(direction), up)
 
             val uniView = glGetUniformLocation(this.shader!!, "view")
             glUniformMatrix4fv(uniView, false, viewMatrix.value())
-
-            // 頂点シェーダーのグローバルGLSL変数"projection"に設定
-            val projectionMatrix = Matrix4f().createProjectionMatrix()
-            val uniProjection = glGetUniformLocation(this.shader!!, "projection")
-            glUniformMatrix4fv(uniProjection, false, projectionMatrix.value())
 
             val lightFloatBuffer = BufferUtils.createFloatBuffer(4)
             lightFloatBuffer.put(floatArrayOf(0f, 1f, 0f, 0f))
@@ -311,7 +332,7 @@ class Main {
             glUniformMatrix3fv(uniLightDir, false, lightFloatBuffer)
 
             // 1秒で1回転?
-            //val angle = 360 * (glfwGetTime() % 0.5).toFloat()
+            //val angle = 360 * (glfwGetTime() % 1000).toFloat()
             //this.modelMatrix = this.modelMatrix.rotateLocalY(angle)
         }
 
@@ -324,8 +345,8 @@ class Main {
             val windowXBuffer = BufferUtils.createIntBuffer(1)
             val windowYBuffer = BufferUtils.createIntBuffer(1)
             glfwGetWindowSize(windowId, windowXBuffer, windowYBuffer)
-            val windowXHalfPos = (windowXBuffer.get(0)/2).toDouble()
-            val windowYHalfPos = (windowYBuffer.get(0)/2).toDouble()
+            val windowXHalfPos = (windowXBuffer.get(0) / 2).toDouble()
+            val windowYHalfPos = (windowYBuffer.get(0) / 2).toDouble()
 
             // マウスの位置を取得
             val xBuffer = BufferUtils.createDoubleBuffer(1)
@@ -334,11 +355,41 @@ class Main {
             val xpos = xBuffer.get(0)
             val ypos = yBuffer.get(0)
 
-            horizontalAngle += mouseSpeed * deltaTime * (windowXHalfPos - xpos ).toFloat()
-            verticalAngle   += mouseSpeed * deltaTime * (windowYHalfPos - ypos ).toFloat()
+            horizontalAngle += mouseSpeed * deltaTime * (windowXHalfPos - xpos).toFloat()
+            verticalAngle += mouseSpeed * deltaTime * (windowYHalfPos - ypos).toFloat()
 
+            this.direction = Vector3f().apply {
+                this.x = cos(verticalAngle) * sin(horizontalAngle)
+                this.y = sin(verticalAngle)
+                this.z = cos(verticalAngle) * cos(horizontalAngle)
+            }
+            val right = Vector3f().apply {
+                this.x = sin(horizontalAngle - 3.14f / 2.0f)
+                this.y = 0f
+                this.z = cos(horizontalAngle - 3.14f / 2.0f)
+            }
+            this.up = Vector3f(direction).cross(right)
 
-
+            // 前へ動きます。
+            if (glfwGetKey(windowId, GLFW_KEY_UP) == GLFW_PRESS) {
+                position.add(direction.mul(deltaTime * speed))
+                logger.info("position ${position.toString()}")
+            }
+            // 後ろへ動きます。
+            if (glfwGetKey(windowId, GLFW_KEY_DOWN) == GLFW_PRESS) {
+                position.sub(direction.mul(deltaTime * speed))
+                logger.info("position ${position.toString()}")
+            }
+            // 前を向いたまま、右へ平行移動します。
+            if (glfwGetKey(windowId, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+                position.add(right.mul(deltaTime * speed))
+                logger.info("position ${position.toString()}")
+            }
+            // 前を向いたまま、左へ平行移動します。
+            if (glfwGetKey(windowId, GLFW_KEY_LEFT) == GLFW_PRESS) {
+                position.sub(right.mul(deltaTime * speed))
+                logger.info("position ${position.toString()}")
+            }
         }
 
         fun render() {
