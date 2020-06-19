@@ -38,10 +38,11 @@ fun main(args: Array<String>) {
     val windowId = enter(pmdStruct)
 
     while (!glfwWindowShouldClose(windowId)) {
+        glfwPollEvents()
+        glViewport(0, 0, width, height)
         update(windowId)
         render()
         glfwSwapBuffers(windowId)
-        glfwPollEvents()
     }
     // GLFWの終了処理
     cleanup()
@@ -76,7 +77,7 @@ class Main {
         private var initialFoV = 45.0f
         private var foV = initialFoV
         private var mouseWheelVelocity = 0f
-        private var speed = 3.0f // 3 units / second
+        private var speed = 10.0f // 3 units / second
         private var mouseSpeed = 0.005f
         private var lastTime = glfwGetTime()
 
@@ -239,7 +240,6 @@ class Main {
 
             // 背景色変更
             glClearColor(0.4f, 0.6f, 0.9f, 0f)
-            glViewport(0, 0, width, height)
 
             // Zバッファ
             glEnable(GL_DEPTH_TEST)  // デプステストを有効にする
@@ -314,33 +314,35 @@ class Main {
             // キーボードとマウスのインプットからMVP行列を計算する
             computeMatricesFromInputs(windowId)
 
-            // 頂点シェーダーのグローバルGLSL変数"model"の位置を保持しておく
-            // 毎フレーム設定するので
+            // Model行列(描画対象のモデルの座標からOpenGLのワールド座標への相対値)
+            // 頂点シェーダーのグローバルGLSL変数"model"に設定
             this.uniModel = glGetUniformLocation(this.shader!!, "model")
+            // 1秒で1回転?
+            //val angle = 360 * (glfwGetTime() % 1).toFloat()
+            //val angle = (glfwGetTime() - lastTime).toFloat() * 30
+            //this.modelMatrix = this.modelMatrix.rotateLocalY(angle)
 
+            // View行列(OpenGLのワールド座標からカメラの座標への相対値)
+            // 頂点シェーダーのグローバルGLSL変数"view"に設定
+            val uniView = glGetUniformLocation(this.shader!!, "view")
+            val viewMatrix = Matrix4f().setLookAt(
+                    position.x, position.y, position.z,  // ワールド空間でのカメラの位置
+                    0f, 0f, 0f, // ワールド空間での見たい位置
+                    0f, 1f, 0f
+            )
+            glUniformMatrix4fv(uniView, false, viewMatrix.value())
+
+            // Projection行列(カメラの座標から、映し出される（射影）ものへの相対値)
             // 頂点シェーダーのグローバルGLSL変数"projection"に設定
             val projectionMatrix = Matrix4f().createProjectionMatrix(foV)
             val uniProjection = glGetUniformLocation(this.shader!!, "projection")
             glUniformMatrix4fv(uniProjection, false, projectionMatrix.value())
 
-            // 頂点シェーダーのグローバルGLSL変数"view"に設定
-            // TODO: このへんまだうまく動かない
-            val viewMatrix = Matrix4f().identity()
-            //val viewMatrix = Matrix4f().lookAt(position, position.add(direction), up)
-
-            val uniView = glGetUniformLocation(this.shader!!, "view")
-            glUniformMatrix4fv(uniView, false, viewMatrix.value())
-
-            val lightFloatBuffer = BufferUtils.createFloatBuffer(4)
-            lightFloatBuffer.put(floatArrayOf(0f, 1f, 0f, 0f))
-            lightFloatBuffer.flip()
-            val uniLightDir = glGetUniformLocation(this.shader!!, "wLightDir")
-            glUniformMatrix3fv(uniLightDir, false, lightFloatBuffer)
-
-            // 1秒で1回転?
-            //val angle = 360 * (glfwGetTime() % 1).toFloat()
-            val angle = (glfwGetTime() - lastTime).toFloat() * 30
-            this.modelMatrix = this.modelMatrix.rotateLocalY(angle)
+//            val lightFloatBuffer = BufferUtils.createFloatBuffer(4)
+//            lightFloatBuffer.put(floatArrayOf(0f, 1f, 0f, 0f))
+//            lightFloatBuffer.flip()
+//            val uniLightDir = glGetUniformLocation(this.shader!!, "wLightDir")
+//            glUniformMatrix3fv(uniLightDir, false, lightFloatBuffer)
         }
 
         private fun computeMatricesFromInputs(windowId: Long) {
@@ -361,41 +363,48 @@ class Main {
             glfwGetCursorPos(windowId, xBuffer, yBuffer)
             val xpos = xBuffer.get(0)
             val ypos = yBuffer.get(0)
+            //glfwSetCursorPos(windowId, windowXHalfPos, windowYHalfPos)
 
             horizontalAngle += mouseSpeed * deltaTime * (windowXHalfPos - xpos).toFloat()
             verticalAngle += mouseSpeed * deltaTime * (windowYHalfPos - ypos).toFloat()
 
+            //println("横の角度: ${horizontalAngle}, 縦の角度 ${verticalAngle}")
+
             this.direction = Vector3f().apply {
-                this.x = cos(verticalAngle) * sin(horizontalAngle)
-                this.y = sin(verticalAngle)
-                this.z = cos(verticalAngle) * cos(horizontalAngle)
+                x = cos(verticalAngle) * sin(horizontalAngle)
+                y = sin(verticalAngle)
+                z = cos(verticalAngle) * cos(horizontalAngle)
             }
+
             val right = Vector3f().apply {
-                this.x = sin(horizontalAngle - 3.14f / 2.0f)
-                this.y = 0f
-                this.z = cos(horizontalAngle - 3.14f / 2.0f)
+                x = sin(horizontalAngle - 3.14f / 2.0f)
+                y = 0f
+                z = cos(horizontalAngle - 3.14f / 2.0f)
             }
+
             this.up = Vector3f(direction).cross(right)
+
+            //println("direction: $direction, up: $up, position: $position")
 
             // 前へ動きます。
             if (glfwGetKey(windowId, GLFW_KEY_UP) == GLFW_PRESS) {
-                position.add(direction.mul(deltaTime * speed))
-                logger.info("position ${position.toString()}")
+                position = position.add(direction.mul(deltaTime * speed))
+                //logger.info("position ${position.toString()}")
             }
             // 後ろへ動きます。
             if (glfwGetKey(windowId, GLFW_KEY_DOWN) == GLFW_PRESS) {
-                position.sub(direction.mul(deltaTime * speed))
-                logger.info("position ${position.toString()}")
+                position = position.sub(direction.mul(deltaTime * speed))
+                //logger.info("position ${position.toString()}")
             }
             // 前を向いたまま、右へ平行移動します。
             if (glfwGetKey(windowId, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-                position.add(right.mul(deltaTime * speed))
-                logger.info("position ${position.toString()}")
+                position = position.add(right.mul(deltaTime * speed))
+                //logger.info("position ${position.toString()}")
             }
             // 前を向いたまま、左へ平行移動します。
             if (glfwGetKey(windowId, GLFW_KEY_LEFT) == GLFW_PRESS) {
-                position.sub(right.mul(deltaTime * speed))
-                logger.info("position ${position.toString()}")
+                position = position.sub(right.mul(deltaTime * speed))
+                //logger.info("position ${position.toString()}")
             }
         }
 
