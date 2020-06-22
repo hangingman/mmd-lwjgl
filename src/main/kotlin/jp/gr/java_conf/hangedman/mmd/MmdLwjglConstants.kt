@@ -22,7 +22,6 @@ object MmdLwjglConstants {
         uniform mat4 model;
         uniform mat4 view;
         uniform mat4 projection;
-        uniform vec3 wLightDir; // ワールド座標のディレクショナルライトの向き
         
         void main() {
             // フラグメントシェーダーには頂点の色をそのまま渡す
@@ -31,10 +30,10 @@ object MmdLwjglConstants {
             mat4 mvp = projection * view * model;
             // m逆転置行列 (Model Inverse Transposeの略)
             mat4 mit = transpose(inverse(model));
-            vec3 n = normalize(mat3(mit) * normal); // 法線のm変換
-            float nl = clamp(dot(n, normalize(-wLightDir)), 0.0, 1.0); // 法線とライトの内積を算出
-            vec3 c = color.rgb * nl; // 最終色を算出 
-            c = clamp(c, 0.0, 1.0); // 0.0 ~ 1.0に色を収める
+            //vec3 n = normalize(mat3(mit) * normal); // 法線のm変換
+            //float nl = clamp(dot(n, 0.0), 0.0, 1.0); // 法線とライトの内積を算出
+            //vec3 c = color.rgb * nl; // 最終色を算出 
+            //c = clamp(c, 0.0, 1.0); // 0.0 ~ 1.0に色を収める
             
             //vertexColor = vec4(c, color.a);
             vertexColor = color;
@@ -48,10 +47,9 @@ object MmdLwjglConstants {
     const val fragmentSource = """
         #version 330
         
-        // 頂点シェーダーから渡された頂点カラー
-        in vec4 vertexColor;
-        // フラグメントシェーダから出力する色
-        out vec4 fragColor;
+        uniform vec3 uLightPosition;
+        in vec4 vertexColor;  // 頂点シェーダーから渡された頂点カラー
+        out vec4 fragColor;   // フラグメントシェーダから出力する色
         
         void main() {
             // 頂点カラーをそのまま出力

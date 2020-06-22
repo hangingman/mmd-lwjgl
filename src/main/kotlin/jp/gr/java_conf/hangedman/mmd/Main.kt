@@ -75,7 +75,8 @@ class Main {
 
         // 初期視野
         private var initialFoV = 45.0f
-        private var foV = initialFoV
+        private var fov = initialFoV
+        private var rotation = 0f
         private var mouseWheelVelocity = 0f
         private var speed = 10.0f // 3 units / second
         private var mouseSpeed = 0.005f
@@ -248,16 +249,23 @@ class Main {
             glEnable(GL_CULL_FACE)   // 視点に対して裏を向いている面を表示しないようにする
             glCullFace(GL_BACK)
 
-            glEnable(GL_LIGHTING)    // OpenGLデフォルトの光源
-            glEnable(GL_LIGHT0)
-
             glfwSetScrollCallback(windowId, object : GLFWScrollCallback() {
-                override fun invoke(windowId: Long, dx: Double, dy: Double) {
-                    mouseWheelVelocity = dy.toFloat()
-                    foV -= (5 * mouseWheelVelocity)
-                    System.out.println("dy: $dy, foV: $foV")
+                override fun invoke(windowId: Long, xoffset: Double, yoffset: Double) {
+                    if (yoffset < 0) {
+                        fov *= 1.05f;
+                    } else {
+                        fov *= 1f / 1.05f;
+                    }
+                    if (fov < 10.0f) {
+                        fov = 10.0f;
+                    } else if (fov > 120.0f) {
+                        fov = 120.0f;
+                    }
                 }
             })
+            glfwSetCursorPosCallback(windowId) { _, x, _ ->
+                rotation = (x.toFloat() / width - 0.5f) * 2f * Math.PI.toFloat()
+            }
 
             // ここから描画情報の読み込み
             createVertex(pmdStruct)
@@ -334,15 +342,16 @@ class Main {
 
             // Projection行列(カメラの座標から、映し出される（射影）ものへの相対値)
             // 頂点シェーダーのグローバルGLSL変数"projection"に設定
-            val projectionMatrix = Matrix4f().createProjectionMatrix(foV)
+            val projectionMatrix = Matrix4f().createProjectionMatrix(fov)
             val uniProjection = glGetUniformLocation(this.shader!!, "projection")
             glUniformMatrix4fv(uniProjection, false, projectionMatrix.value())
 
-//            val lightFloatBuffer = BufferUtils.createFloatBuffer(4)
-//            lightFloatBuffer.put(floatArrayOf(0f, 1f, 0f, 0f))
-//            lightFloatBuffer.flip()
-//            val uniLightDir = glGetUniformLocation(this.shader!!, "wLightDir")
-//            glUniformMatrix3fv(uniLightDir, false, lightFloatBuffer)
+            val lightPositionBuffer = BufferUtils.createFloatBuffer(3).apply {
+                put(floatArrayOf(-5f, 5f, 5f))
+                flip()
+            }
+            val uLightPosition = glGetUniformLocation(this.shader!!, "uLightPosition")
+            glUniformMatrix3fv(uLightPosition, false, lightPositionBuffer)
         }
 
         private fun computeMatricesFromInputs(windowId: Long) {
@@ -351,6 +360,9 @@ class Main {
             val deltaTime = (currentTime - lastTime).toFloat()
             lastTime = currentTime
 
+            position.set(10f * cos(rotation), 10f, 10f * sin(rotation))
+
+            /**
             val windowXBuffer = BufferUtils.createIntBuffer(1)
             val windowYBuffer = BufferUtils.createIntBuffer(1)
             glfwGetWindowSize(windowId, windowXBuffer, windowYBuffer)
@@ -406,6 +418,7 @@ class Main {
                 position = position.sub(right.mul(deltaTime * speed))
                 //logger.info("position ${position.toString()}")
             }
+            */
         }
 
         fun render() {
