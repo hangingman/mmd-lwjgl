@@ -1,7 +1,5 @@
 package jp.gr.java_conf.hangedman.mmd
 
-import jp.gr.java_conf.hangedman.lwjgl.BufferBuilder.buildFloatBuffer
-import jp.gr.java_conf.hangedman.lwjgl.BufferBuilder.buildShortBuffer
 import jp.gr.java_conf.hangedman.lwjgl.ShaderHandler.makeShader
 import jp.gr.java_conf.hangedman.lwjgl.createProjectionMatrix
 import jp.gr.java_conf.hangedman.lwjgl.value
@@ -14,7 +12,7 @@ import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.height
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.title
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.vertexSource
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.width
-import jp.gr.java_conf.hangedman.mmd.pmd.PmdStruct
+import jp.gr.java_conf.hangedman.mmd.pmd.*
 import org.joml.Math.cos
 import org.joml.Math.sin
 import org.joml.Matrix4f
@@ -92,60 +90,15 @@ class Main {
         private var modelMatrix = Matrix4f()
 
         // VAO, VBO, VBOIの読み込み
-        fun createVertex(pmdStruct: PmdStruct) {
+        fun loadPolygonData(pmdStruct: PmdStruct) {
 
-            // 頂点リスト
-            val vertices = pmdStruct.vertex!!
-                    .map { v -> v.pos }
-                    .flatMap { fArray ->
-                        mutableListOf<Float>().also {
-                            it.addAll(fArray.asList())
-                        }
-                    }.toFloatArray()
+            val verticesBuffer = pmdStruct.verticesBuffer() // 頂点
+            val colorsBuffer = pmdStruct.colorsBuffer()     // 色
+            val normalsBuffer = pmdStruct.normalsBuffer()   // 法線
 
-            // 面頂点リストの適用合計値に対してどの材質リストを使うかを保持する連想配列
-            val materialRanged = pmdStruct.material!!
-                    .mapIndexed { i, m ->
-                        val materialRanged = pmdStruct.material!!.filterIndexed { index, material ->
-                            index <= i
-                        }.map { it.faceVertCount }.sum()
-                        materialRanged to m
-                    }
-
-            // 頂点に対してどの材質リストを使うかを保持する連想配列
-            val vertexMaterialMap = pmdStruct.vertex!!
-                    .mapIndexed { index, _ ->
-                        val faceVertIndex = pmdStruct.faceVertIndex!!.indexOfFirst { faceVert -> faceVert == index.toShort() }
-                        val material = materialRanged.find { m -> m.first >= faceVertIndex }
-                        index to material!!.second
-                    }
-
-            // 頂点に対する色を設定する
-            val colors = pmdStruct.vertex!!
-                    .mapIndexed { i, _ ->
-                        val floatList = mutableListOf<Float>()
-                        val m = vertexMaterialMap.find { (range, _) -> i <= range }!!.second
-                        floatList.addAll(m.diffuseColor.toList())
-                        floatList.add(m.alpha)
-                        floatList
-                    }.flatten().toFloatArray()
-
-            val normals = pmdStruct.vertex!!
-                    .map { v -> v.normalVec }
-                    .flatMap { fArray ->
-                        mutableListOf<Float>().also {
-                            it.addAll(fArray.asList())
-                        }
-                    }.toFloatArray()
-
-            val verticesBuffer = buildFloatBuffer(vertices) // 頂点
-            val colorsBuffer = buildFloatBuffer(colors)     // 色
-            val normalsBuffer = buildFloatBuffer(normals)   // 法線
-
-            // OpenGL expects to draw vertices in counter clockwise order by default
-            val indices = pmdStruct.faceVertIndex
-            indicesCount = pmdStruct.faceVertCount
-            val indicesBuffer = buildShortBuffer(indices!!)
+            // val indices = pmdStruct.faceVertIndex
+            val (indicesCount, indicesBuffer) = pmdStruct.faceVertPair()
+            this.indicesCount = indicesCount
 
             // Create a new Vertex Array Object in memory and select it (bind)
             // A VAO can have up to 16 attributes (VBO's) assigned to it by default
@@ -255,7 +208,7 @@ class Main {
             }
 
             // ここから描画情報の読み込み
-            createVertex(pmdStruct)
+            loadPolygonData(pmdStruct)
             makeShader(vertexSource, fragmentSource).let { (vertShaderObj, fragShaderObj, shader) ->
                 this.vertShaderObj = vertShaderObj
                 this.fragShaderObj = fragShaderObj
