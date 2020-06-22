@@ -8,30 +8,57 @@ class PmdStruct {
     // ヘッダ
     @Bin(order = 1)
     var magic: ByteArray? = null
+
     @Bin(order = 2)
     var version: Float = 0F
+
     @Bin(order = 3)
     var modelName: ByteArray? = null
+
     @Bin(order = 4)
     var comment: ByteArray? = null
 
     // 頂点リスト
     @Bin(order = 5)
     var vertCount: Int = 0
+
     @Bin(order = 6, arraySizeExpr = "vertCount")
     var vertex: Array<Vertex>? = null
 
     // 面頂点リスト
     @Bin(order = 7)
     var faceVertCount: Int = 0
+
     @Bin(order = 8, arraySizeExpr = "faceVertCount")
     var faceVertIndex: ShortArray? = null
 
     // 材質リスト
     @Bin(order = 9)
     var materialCount: Int = 0
+
     @Bin(order = 10, arraySizeExpr = "materialCount")
     var material: Array<Material>? = null
+
+    // 面頂点リストの適用合計値に対してどの材質リストを使うかを保持する連想配列
+    val materialRanged: List<Pair<Int, Material>> by lazy {
+        this.material!!
+                .mapIndexed { i, m ->
+                    val materialRanged = this.material!!.filterIndexed { index, material ->
+                        index <= i
+                    }.map { it.faceVertCount }.sum()
+                    materialRanged to m
+                }
+    }
+
+    // 頂点に対してどの材質リストを使うかを保持する連想配列
+    val vertexMaterialMap: List<Pair<Int, Material>> by lazy {
+        this.vertex!!
+                .mapIndexed { index, _ ->
+                    val faceVertIndex = this.faceVertIndex!!.indexOfFirst { faceVert -> faceVert == index.toShort() }
+                    val material = materialRanged.find { m -> m.first >= faceVertIndex }
+                    index to material!!.second
+                }
+    }
 }
 
 class Vertex {

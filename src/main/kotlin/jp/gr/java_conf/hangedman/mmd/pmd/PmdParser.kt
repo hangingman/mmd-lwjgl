@@ -1,6 +1,7 @@
 package jp.gr.java_conf.hangedman.mmd.pmd
 
 import com.igormaznitsa.jbbp.JBBPParser
+import com.igormaznitsa.jbbp.mapper.JBBPMapper.FLAG_IGNORE_MISSING_VALUES
 import java.io.InputStream
 
 object PmdParser {
@@ -43,6 +44,8 @@ object PmdParser {
     """.trimIndent())
 
     fun parse(stream: InputStream): PmdStruct {
-        return pmdParser.parse(stream).mapTo(PmdStruct())
+        return pmdParser
+                .parse(stream) // Struct内部にデータ型以外のものも設定したいのでフラグをセット
+                .mapTo(PmdStruct(), FLAG_IGNORE_MISSING_VALUES)
     }
 }

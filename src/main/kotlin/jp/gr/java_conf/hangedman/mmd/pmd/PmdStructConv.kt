@@ -19,25 +19,10 @@ fun PmdStruct.verticesBuffer(): FloatBuffer {
 
 fun PmdStruct.diffuseColorsBuffer(): FloatBuffer {
 
-    // 面頂点リストの適用合計値に対してどの材質リストを使うかを保持する連想配列
-    val materialRanged = this.material!!
-            .mapIndexed { i, m ->
-                val materialRanged = this.material!!.filterIndexed { index, material ->
-                    index <= i
-                }.map { it.faceVertCount }.sum()
-                materialRanged to m
-            }
-
-    // 頂点に対してどの材質リストを使うかを保持する連想配列
-    val vertexMaterialMap = this.vertex!!
-            .mapIndexed { index, _ ->
-                val faceVertIndex = this.faceVertIndex!!.indexOfFirst { faceVert -> faceVert == index.toShort() }
-                val material = materialRanged.find { m -> m.first >= faceVertIndex }
-                index to material!!.second
-            }
+    val vertexMaterialMap = this.vertexMaterialMap
 
     // 頂点に対する色を設定する
-    val colors = this.vertex!!
+    val diffuseColors = this.vertex!!
             .mapIndexed { i, _ ->
                 val floatList = mutableListOf<Float>()
                 val m = vertexMaterialMap.find { (range, _) -> i <= range }!!.second
@@ -46,7 +31,7 @@ fun PmdStruct.diffuseColorsBuffer(): FloatBuffer {
                 floatList
             }.flatten().toFloatArray()
 
-    return buildFloatBuffer(colors)
+    return buildFloatBuffer(diffuseColors)
 }
 
 fun PmdStruct.normalsBuffer(): FloatBuffer {
