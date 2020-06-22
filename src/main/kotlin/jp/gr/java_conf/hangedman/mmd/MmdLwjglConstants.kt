@@ -56,5 +56,10 @@ object MmdLwjglConstants {
             fragColor = vertexColor;
         }
     """
+}
 
+enum class VboIndex(val rawValue: Int) {
+    VERTEX(0),
+    COLOR(1),
+    NORMAL(2)
 }

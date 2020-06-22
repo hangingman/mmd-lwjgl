@@ -1,5 +1,8 @@
 package jp.gr.java_conf.hangedman.mmd
 
+import jp.gr.java_conf.hangedman.lwjgl.BufferBuilder.buildFloatBuffer
+import jp.gr.java_conf.hangedman.lwjgl.BufferBuilder.buildShortBuffer
+import jp.gr.java_conf.hangedman.lwjgl.ShaderHandler.makeShader
 import jp.gr.java_conf.hangedman.lwjgl.createProjectionMatrix
 import jp.gr.java_conf.hangedman.lwjgl.value
 import jp.gr.java_conf.hangedman.mmd.Main.Companion.cleanup
@@ -135,30 +138,14 @@ class Main {
                         }
                     }.toFloatArray()
 
-            // 頂点
-            val verticesBuffer = BufferUtils.createFloatBuffer(vertices.size)
-            verticesBuffer.put(vertices)
-            verticesBuffer.flip()
-            println("vertices size " + vertices.size)
-
-            // 色
-            val colorsBuffer = BufferUtils.createFloatBuffer(colors.size)
-            colorsBuffer.put(colors)
-            colorsBuffer.flip()
-            println("colors size " + colors.size / 4)
-
-            // 法線
-            val normalsBuffer = BufferUtils.createFloatBuffer(normals.size)
-            normalsBuffer.put(normals)
-            normalsBuffer.flip()
+            val verticesBuffer = buildFloatBuffer(vertices) // 頂点
+            val colorsBuffer = buildFloatBuffer(colors)     // 色
+            val normalsBuffer = buildFloatBuffer(normals)   // 法線
 
             // OpenGL expects to draw vertices in counter clockwise order by default
             val indices = pmdStruct.faceVertIndex
             indicesCount = pmdStruct.faceVertCount
-
-            val indicesBuffer = BufferUtils.createShortBuffer(indicesCount)
-            indicesBuffer.put(indices)
-            indicesBuffer.flip()
+            val indicesBuffer = buildShortBuffer(indices!!)
 
             // Create a new Vertex Array Object in memory and select it (bind)
             // A VAO can have up to 16 attributes (VBO's) assigned to it by default
@@ -167,16 +154,16 @@ class Main {
 
             // Create a new Vertex Buffer Object in memory and select it (bind)
             // A VBO is a collection of Vectors which in this case resemble the location of each vertex.
-            this.vbo[0] = glGenBuffers()
-            glBindBuffer(GL_ARRAY_BUFFER, this.vbo[0])
+            this.vbo[VboIndex.VERTEX.rawValue] = glGenBuffers()
+            glBindBuffer(GL_ARRAY_BUFFER, this.vbo[VboIndex.VERTEX.rawValue])
             glBufferData(GL_ARRAY_BUFFER, verticesBuffer, GL_STATIC_DRAW)
             // Put the VBO in the attributes list at index 0
             glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0)
             // Deselect (bind to 0) the VBO
             glBindBuffer(GL_ARRAY_BUFFER, 0)
 
-            this.vbo[1] = glGenBuffers()
-            glBindBuffer(GL_ARRAY_BUFFER, this.vbo[1])
+            this.vbo[VboIndex.COLOR.rawValue] = glGenBuffers()
+            glBindBuffer(GL_ARRAY_BUFFER, this.vbo[VboIndex.COLOR.rawValue])
             glBufferData(GL_ARRAY_BUFFER, colorsBuffer, GL_STATIC_DRAW)
             // Put the VBO in the attributes list at index 1
             glVertexAttribPointer(1, 4, GL_FLOAT, false, 0, 0)
@@ -184,8 +171,8 @@ class Main {
             // Deselect (bind to 0) the VBO
             glBindBuffer(GL_ARRAY_BUFFER, 0)
 
-            this.vbo[2] = glGenBuffers()
-            glBindBuffer(GL_ARRAY_BUFFER, this.vbo[2])
+            this.vbo[VboIndex.NORMAL.rawValue] = glGenBuffers()
+            glBindBuffer(GL_ARRAY_BUFFER, this.vbo[VboIndex.NORMAL.rawValue])
             glBufferData(GL_ARRAY_BUFFER, normalsBuffer, GL_STATIC_DRAW)
             // Put the VBO in the attributes list at index 2
             glVertexAttribPointer(2, 3, GL_FLOAT, false, 0, 0)
@@ -269,7 +256,11 @@ class Main {
 
             // ここから描画情報の読み込み
             createVertex(pmdStruct)
-            makeShader(vertexSource, fragmentSource)
+            makeShader(vertexSource, fragmentSource).let { (vertShaderObj, fragShaderObj, shader) ->
+                this.vertShaderObj = vertShaderObj
+                this.fragShaderObj = fragShaderObj
+                this.shader = shader
+            }
 
             val floatSize = 4
             // 頂点シェーダーのinパラメータ"position"と対応
@@ -278,44 +269,6 @@ class Main {
             glVertexAttribPointer(posAttrib, 3, GL_FLOAT, false, 6 * floatSize, 0)
 
             return windowId
-        }
-
-        private fun makeShader(vertexSource: String, fragmentSource: String) {
-            // シェーダーオブジェクト作成
-            this.vertShaderObj = glCreateShader(GL_VERTEX_SHADER)
-            this.fragShaderObj = glCreateShader(GL_FRAGMENT_SHADER)
-
-            // シェーダーのソースプログラムの読み込み
-            readShaderSource(this.vertShaderObj!!, vertexSource)
-            readShaderSource(this.fragShaderObj!!, fragmentSource)
-
-            // バーテックスシェーダーのソースプログラムのコンパイル
-            glCompileShader(this.vertShaderObj!!)
-            if (glGetShaderi(this.vertShaderObj!!, GL_COMPILE_STATUS) != GL_TRUE) {
-                throw IllegalStateException("Failed to compile vertex shader...")
-            }
-            // フラグメントシェーダーのソースプログラムのコンパイル
-            glCompileShader(this.fragShaderObj!!)
-            if (glGetShaderi(this.fragShaderObj!!, GL_COMPILE_STATUS) != GL_TRUE) {
-                throw IllegalStateException("Failed to compile fragment shader...")
-            }
-
-            // プログラムオブジェクトの作成
-            this.shader = glCreateProgram()
-            // シェーダーオブジェクトのシェーダープログラムへの登録
-            glAttachShader(this.shader!!, this.vertShaderObj!!)
-            glAttachShader(this.shader!!, this.fragShaderObj!!)
-            // シェーダーにデータの位置をバインド
-            glBindFragDataLocation(this.shader!!, 0, "fragColor")
-
-            // シェーダープログラムのリンクと実行
-            glLinkProgram(this.shader!!)
-            glUseProgram(this.shader!!)
-        }
-
-        private fun readShaderSource(shaderObj: Int, shaderSrc: String) {
-            //logger.debug("shader source: \n$shaderSrc")
-            glShaderSource(shaderObj, shaderSrc)
         }
 
         fun update(windowId: Long) {
@@ -446,9 +399,9 @@ class Main {
 
         fun cleanup() {
             glDeleteVertexArrays(this.vao)
-            glDeleteBuffers(this.vbo[0])
-            glDeleteBuffers(this.vbo[1])
-            glDeleteBuffers(this.vbo[2])
+            glDeleteBuffers(this.vbo[VboIndex.VERTEX.rawValue])
+            glDeleteBuffers(this.vbo[VboIndex.COLOR.rawValue])
+            glDeleteBuffers(this.vbo[VboIndex.NORMAL.rawValue])
             glDeleteBuffers(this.vboi)
 
             glDeleteShader(this.vertShaderObj!!)
