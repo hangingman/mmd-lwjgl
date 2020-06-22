@@ -34,7 +34,7 @@ object PmdParser {
             <floatj alpha;
             <floatj specularity;
             <floatj[3] specularColor;
-            <floatj[3] mirrorColor;
+            <floatj[3] ambientColor;
             byte toonIndex;
             byte edgeFlag;
             <int faceVertCount;

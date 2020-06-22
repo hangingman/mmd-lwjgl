@@ -17,7 +17,7 @@ fun PmdStruct.verticesBuffer(): FloatBuffer {
     return buildFloatBuffer(vertices)
 }
 
-fun PmdStruct.colorsBuffer(): FloatBuffer {
+fun PmdStruct.diffuseColorsBuffer(): FloatBuffer {
 
     // 面頂点リストの適用合計値に対してどの材質リストを使うかを保持する連想配列
     val materialRanged = this.material!!

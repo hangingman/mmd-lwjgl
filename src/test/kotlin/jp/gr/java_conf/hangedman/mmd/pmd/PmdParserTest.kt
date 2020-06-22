@@ -123,7 +123,7 @@ class PmdParserTest {
             assertEquals(alpha, pmdStruct.material!![index].alpha)
             assertEquals(specularity, pmdStruct.material!![index].specularity)
             assertArrayEquals(floatArrayOf(sr, sg, sb), pmdStruct.material!![index].specularColor)
-            assertArrayEquals(floatArrayOf(mr, mg, mb), pmdStruct.material!![index].mirrorColor)
+            assertArrayEquals(floatArrayOf(mr, mg, mb), pmdStruct.material!![index].ambientColor)
             assertEquals(toonIndex, pmdStruct.material!![index].toonIndex)
             assertEquals(edgeFlag, pmdStruct.material!![index].edgeFlag)
             assertEquals(faceVertCount, pmdStruct.material!![index].faceVertCount)

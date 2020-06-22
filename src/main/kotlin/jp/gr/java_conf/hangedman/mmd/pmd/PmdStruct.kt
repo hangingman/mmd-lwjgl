@@ -44,13 +44,13 @@ class Vertex {
 }
 
 class Material {
-    @Bin var diffuseColor: FloatArray = floatArrayOf(0F, 0F, 0F)
-    @Bin var alpha: Float = 0F
-    @Bin var specularity: Float = 0F
-    @Bin var specularColor: FloatArray = floatArrayOf(0F, 0F, 0F)
-    @Bin var mirrorColor: FloatArray = floatArrayOf(0F, 0F, 0F)
-    @Bin var toonIndex: Byte = 0
-    @Bin var edgeFlag: Byte = 0
-    @Bin var faceVertCount: Int = 0
-    @Bin var textureFileName: ByteArray = ByteArray(0)
+    @Bin var diffuseColor: FloatArray = floatArrayOf(0F, 0F, 0F)  // 物体色
+    @Bin var alpha: Float = 0F                                    // 物体色透過率
+    @Bin var specularity: Float = 0F                              // 光沢度
+    @Bin var specularColor: FloatArray = floatArrayOf(0F, 0F, 0F) // 光沢色
+    @Bin var ambientColor: FloatArray = floatArrayOf(0F, 0F, 0F)  // 環境色
+    @Bin var toonIndex: Byte = 0                                  // toon番号
+    @Bin var edgeFlag: Byte = 0                                   // エッジ
+    @Bin var faceVertCount: Int = 0                               // 面頂点数
+    @Bin var textureFileName: ByteArray = ByteArray(0)       // テクスチャーファイル名
 }

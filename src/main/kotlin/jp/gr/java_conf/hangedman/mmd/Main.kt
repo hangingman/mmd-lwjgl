@@ -92,9 +92,10 @@ class Main {
         // VAO, VBO, VBOIの読み込み
         fun loadPolygonData(pmdStruct: PmdStruct) {
 
-            val verticesBuffer = pmdStruct.verticesBuffer() // 頂点
-            val colorsBuffer = pmdStruct.colorsBuffer()     // 色
-            val normalsBuffer = pmdStruct.normalsBuffer()   // 法線
+            val verticesBuffer = pmdStruct.verticesBuffer()            // 頂点
+            val diffuseColorsBuffer = pmdStruct.diffuseColorsBuffer()  // 物体色
+            //val ambientColorsBuffer = pmdStruct.ambientColorsBuffer()  // 環境色
+            val normalsBuffer = pmdStruct.normalsBuffer()              // 法線
 
             // val indices = pmdStruct.faceVertIndex
             val (indicesCount, indicesBuffer) = pmdStruct.faceVertPair()
@@ -117,7 +118,7 @@ class Main {
 
             this.vbo[VboIndex.COLOR.rawValue] = glGenBuffers()
             glBindBuffer(GL_ARRAY_BUFFER, this.vbo[VboIndex.COLOR.rawValue])
-            glBufferData(GL_ARRAY_BUFFER, colorsBuffer, GL_STATIC_DRAW)
+            glBufferData(GL_ARRAY_BUFFER, diffuseColorsBuffer, GL_STATIC_DRAW)
             // Put the VBO in the attributes list at index 1
             glVertexAttribPointer(1, 4, GL_FLOAT, false, 0, 0)
             glEnableVertexAttribArray(1)
