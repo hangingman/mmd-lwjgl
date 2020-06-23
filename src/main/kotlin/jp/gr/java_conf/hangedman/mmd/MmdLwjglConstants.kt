@@ -17,12 +17,15 @@ object MmdLwjglConstants {
         in float alpha;
         in vec3 diffuseColor;
         in vec3 ambientColor;
+        in vec3 specularColor;
         in vec3 normal;
         
         // 次のフラグメントシェーダーに渡す頂点カラー
         out float vAlpha;
         out vec3 vDiffuseColor;
         out vec3 vAmbientColor;
+        out vec3 vSpecularColor;
+        out vec3 vNormal;
         
         // プログラムから指定されるグローバルGLSL変数
         uniform mat4 model;
@@ -46,6 +49,8 @@ object MmdLwjglConstants {
             vAlpha = alpha;
             vDiffuseColor = diffuseColor;
             vAmbientColor = ambientColor;
+            vSpecularColor = specularColor;
+            vNormal = normal;
             
             // gl_Positionが最終的な頂点座標
             gl_Position = mvp * vec4(position, 1.0);
@@ -61,6 +66,8 @@ object MmdLwjglConstants {
         in float vAlpha;
         in vec3 vDiffuseColor;
         in vec3 vAmbientColor;
+        in vec3 vSpecularColor;
+        in vec3 vNormal;
         
         out vec4 fragColor;   // フラグメントシェーダから出力する色
         
@@ -71,8 +78,10 @@ object MmdLwjglConstants {
 
             vec3 ambientColor = ambientStrength * vAmbientColor;
             vec3 diffuseColor = diffuseStrength * vDiffuseColor;
+            vec3 specularColor = specularStrength * vSpecularColor; 
+            vec3 normal = normalize(vNormal);
     
-            fragColor = vec4(ambientColor + diffuseColor, vAlpha);
+            fragColor = vec4(ambientColor + diffuseColor + specularColor, vAlpha);
         }
     """
 }
@@ -82,7 +91,8 @@ enum class VboIndex(val asInt: Int) {
     ALPHA(1),
     DIFFUSE_COLOR(2),
     AMBIENT_COLOR(3),
-    NORMAL(4);
+    SPECULAR_COLOR(4),
+    NORMAL(5);
 
     fun elementSize(): Int {
         return when(this) {
@@ -90,6 +100,7 @@ enum class VboIndex(val asInt: Int) {
             ALPHA -> 1
             DIFFUSE_COLOR  -> 3
             AMBIENT_COLOR -> 3
+            SPECULAR_COLOR -> 3
             NORMAL -> 3
             else -> throw IllegalStateException("Invalid VboIndex Enum")
         }

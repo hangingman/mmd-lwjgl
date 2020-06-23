@@ -62,6 +62,21 @@ fun PmdStruct.ambientColorsBuffer(): FloatBuffer {
             }
 }
 
+fun PmdStruct.specularColorsBuffer(): FloatBuffer {
+
+    val vertexMaterialMap = this.vertexMaterialMap
+
+    return this.vertex!!
+            .mapIndexed { i, _ ->
+                val floatList = mutableListOf<Float>()
+                val m = vertexMaterialMap.find { (range, _) -> i <= range }!!.second
+                floatList.addAll(m.specularColor.toList())
+                floatList
+            }.flatten().toFloatArray().run {
+                buildFloatBuffer(this)
+            }
+}
+
 fun PmdStruct.normalsBuffer(): FloatBuffer {
     val normals = this.vertex!!
             .map { v -> v.normalVec }

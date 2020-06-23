@@ -92,11 +92,12 @@ class Main {
         // VAO, VBO, VBOIの読み込み
         fun loadPolygonData(pmdStruct: PmdStruct) {
 
-            val verticesBuffer = pmdStruct.verticesBuffer()            // 頂点
-            val alphaBuffer = pmdStruct.alphaBuffer()                  // 物体色透過率
-            val diffuseColorsBuffer = pmdStruct.diffuseColorsBuffer()  // 物体色
-            val ambientColorsBuffer = pmdStruct.ambientColorsBuffer()  // 環境色
-            val normalsBuffer = pmdStruct.normalsBuffer()              // 法線
+            val verticesBuffer = pmdStruct.verticesBuffer()             // 頂点
+            val alphaBuffer = pmdStruct.alphaBuffer()                   // 物体色透過率
+            val diffuseColorsBuffer = pmdStruct.diffuseColorsBuffer()   // 物体色
+            val ambientColorsBuffer = pmdStruct.ambientColorsBuffer()   // 環境色
+            val specularColorsBuffer = pmdStruct.specularColorsBuffer() // 光沢色
+            val normalsBuffer = pmdStruct.normalsBuffer()               // 法線
 
             val (indicesCount, indicesBuffer) = pmdStruct.faceVertPair()  // 面頂点
             this.indicesCount = indicesCount
@@ -112,6 +113,7 @@ class Main {
                     VboIndex.ALPHA to alphaBuffer,
                     VboIndex.DIFFUSE_COLOR to diffuseColorsBuffer,
                     VboIndex.AMBIENT_COLOR to ambientColorsBuffer,
+                    VboIndex.SPECULAR_COLOR to specularColorsBuffer,
                     VboIndex.NORMAL to normalsBuffer
             ).forEach { (index, buffer) ->
                 this.vbo[index.asInt] = glGenBuffers()
