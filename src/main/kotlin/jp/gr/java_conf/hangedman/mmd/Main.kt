@@ -17,7 +17,6 @@ import org.joml.Math.cos
 import org.joml.Math.sin
 import org.joml.Matrix4f
 import org.joml.Vector3f
-import org.lwjgl.BufferUtils
 import org.lwjgl.Version
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWScrollCallback
@@ -241,12 +240,9 @@ class Main {
             val uniProjection = glGetUniformLocation(this.shader!!, "projection")
             glUniformMatrix4fv(uniProjection, false, projectionMatrix.value())
 
-            val lightPositionBuffer = BufferUtils.createFloatBuffer(3).apply {
-                put(floatArrayOf(-5f, 5f, 5f))
-                flip()
-            }
+            // 照明の座標
             val uLightPosition = glGetUniformLocation(this.shader!!, "uLightPosition")
-            glUniformMatrix3fv(uLightPosition, false, lightPositionBuffer)
+            glUniform3f(uLightPosition, -5f, 5f, 5f)
         }
 
         private fun computeMatricesFromInputs(windowId: Long) {

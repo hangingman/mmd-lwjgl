@@ -26,6 +26,7 @@ object MmdLwjglConstants {
         out vec3 vAmbientColor;
         out vec3 vSpecularColor;
         out vec3 vNormal;
+        out vec3 vPosition;
         
         // プログラムから指定されるグローバルGLSL変数
         uniform mat4 model;
@@ -51,6 +52,7 @@ object MmdLwjglConstants {
             vAmbientColor = ambientColor;
             vSpecularColor = specularColor;
             vNormal = normal;
+            vPosition = position;
             
             // gl_Positionが最終的な頂点座標
             gl_Position = mvp * vec4(position, 1.0);
@@ -68,6 +70,7 @@ object MmdLwjglConstants {
         in vec3 vAmbientColor;
         in vec3 vSpecularColor;
         in vec3 vNormal;
+        in vec3 vPosition;
         
         out vec4 fragColor;   // フラグメントシェーダから出力する色
         
@@ -76,10 +79,13 @@ object MmdLwjglConstants {
             float diffuseStrength = 0.5;
             float specularStrength = 0.5;
 
-            vec3 ambientColor = ambientStrength * vAmbientColor;
-            vec3 diffuseColor = diffuseStrength * vDiffuseColor;
-            vec3 specularColor = specularStrength * vSpecularColor; 
+            vec3 lightDirection = normalize(uLightPosition - vPosition);
             vec3 normal = normalize(vNormal);
+            
+            vec3 ambientColor = ambientStrength * vAmbientColor;
+            vec3 diffuseColor = diffuseStrength * max(0.0, dot(normal, lightDirection)) * vDiffuseColor;
+            vec3 specularColor = specularStrength * vSpecularColor;
+            vec3 reflectDirection = reflect(-lightDirection, normal);
     
             fragColor = vec4(ambientColor + diffuseColor + specularColor, vAlpha);
         }

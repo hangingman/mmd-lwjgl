@@ -1,14 +1,20 @@
 package jp.gr.java_conf.hangedman.lwjgl
 
 import org.joml.Matrix4f
+import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import org.lwjgl.glfw.GLFW
-import org.lwjgl.opengl.GL11.*
 import org.lwjgl.system.MemoryStack
 import java.nio.FloatBuffer
 
 fun Matrix4f.value(): FloatBuffer {
     val floatBuffer = BufferUtils.createFloatBuffer(16)
+    this.get(floatBuffer)
+    return floatBuffer
+}
+
+fun Vector3f.value(): FloatBuffer {
+    val floatBuffer = BufferUtils.createFloatBuffer(3)
     this.get(floatBuffer)
     return floatBuffer
 }
