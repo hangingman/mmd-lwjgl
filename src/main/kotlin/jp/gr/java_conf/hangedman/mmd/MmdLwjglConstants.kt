@@ -65,8 +65,14 @@ object MmdLwjglConstants {
         out vec4 fragColor;   // フラグメントシェーダから出力する色
         
         void main() {
-            // 頂点カラーをそのまま出力
-            fragColor = vec4(vAmbientColor + vDiffuseColor, vAlpha);
+            float ambientStrength = 0.5;
+            float diffuseStrength = 0.5;
+            float specularStrength = 0.5;
+
+            vec3 ambientColor = ambientStrength * vAmbientColor;
+            vec3 diffuseColor = diffuseStrength * vDiffuseColor;
+    
+            fragColor = vec4(ambientColor + diffuseColor, vAlpha);
         }
     """
 }
@@ -75,7 +81,7 @@ enum class VboIndex(val asInt: Int) {
     VERTEX(0),
     ALPHA(1),
     DIFFUSE_COLOR(2),
-    AMBIENT(3),
+    AMBIENT_COLOR(3),
     NORMAL(4);
 
     fun elementSize(): Int {
@@ -83,7 +89,7 @@ enum class VboIndex(val asInt: Int) {
             VERTEX -> 3
             ALPHA -> 1
             DIFFUSE_COLOR  -> 3
-            AMBIENT -> 3
+            AMBIENT_COLOR -> 3
             NORMAL -> 3
             else -> throw IllegalStateException("Invalid VboIndex Enum")
         }

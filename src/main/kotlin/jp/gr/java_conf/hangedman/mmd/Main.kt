@@ -111,7 +111,7 @@ class Main {
                     VboIndex.VERTEX to verticesBuffer,
                     VboIndex.ALPHA to alphaBuffer,
                     VboIndex.DIFFUSE_COLOR to diffuseColorsBuffer,
-                    VboIndex.AMBIENT to ambientColorsBuffer,
+                    VboIndex.AMBIENT_COLOR to ambientColorsBuffer,
                     VboIndex.NORMAL to normalsBuffer
             ).forEach { (index, buffer) ->
                 this.vbo[index.asInt] = glGenBuffers()

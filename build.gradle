@@ -42,6 +42,8 @@ switch (OperatingSystem.current()) {
 }
 
 dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
     implementation "uk.org.lidalia:sysout-over-slf4j:1.0.2"
     implementation "io.github.microutils:kotlin-logging:1.7.9"
     implementation "org.joml:joml:1.9.24"
@@ -76,7 +78,6 @@ dependencies {
     runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-par::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }
 
 test {
