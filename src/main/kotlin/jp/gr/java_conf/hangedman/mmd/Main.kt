@@ -57,7 +57,7 @@ class Main {
 
         // VAO, VBO, VBOI
         private var vao: Int = 0
-        private var vbo: IntArray = intArrayOf(0, 0, 0) // 頂点, 色, 法線
+        private var vbo: IntArray = IntArray(VboIndex.values().size)
         private var vboi: Int = 0
         private var indicesCount: Int = 0
 
@@ -93,6 +93,7 @@ class Main {
         fun loadPolygonData(pmdStruct: PmdStruct) {
 
             val verticesBuffer = pmdStruct.verticesBuffer()            // 頂点
+            val alphaBuffer = pmdStruct.alphaBuffer()                  // 物体色透過率
             val diffuseColorsBuffer = pmdStruct.diffuseColorsBuffer()  // 物体色
             val ambientColorsBuffer = pmdStruct.ambientColorsBuffer()  // 環境色
             val normalsBuffer = pmdStruct.normalsBuffer()              // 法線
@@ -106,8 +107,12 @@ class Main {
             glBindVertexArray(this.vao)
 
             // 新しいVertex Buffer Objectをメモリ上に作成し選択する(バインド), VBOはベクトルの集まり
-            listOf(VboIndex.VERTEX, VboIndex.DIFFUSE_COLOR, VboIndex.NORMAL).zip(
-                    listOf(verticesBuffer, diffuseColorsBuffer, normalsBuffer)
+            mapOf(
+                    VboIndex.VERTEX to verticesBuffer,
+                    VboIndex.ALPHA to alphaBuffer,
+                    VboIndex.DIFFUSE_COLOR to diffuseColorsBuffer,
+                    VboIndex.AMBIENT to ambientColorsBuffer,
+                    VboIndex.NORMAL to normalsBuffer
             ).forEach { (index, buffer) ->
                 this.vbo[index.asInt] = glGenBuffers()
                 glBindBuffer(GL_ARRAY_BUFFER, this.vbo[index.asInt])
@@ -334,9 +339,9 @@ class Main {
 
         fun cleanup() {
             glDeleteVertexArrays(this.vao)
-            glDeleteBuffers(this.vbo[VboIndex.VERTEX.asInt])
-            glDeleteBuffers(this.vbo[VboIndex.DIFFUSE_COLOR.asInt])
-            glDeleteBuffers(this.vbo[VboIndex.NORMAL.asInt])
+            VboIndex.values().forEach { index ->
+                glDeleteBuffers(this.vbo[index.asInt])
+            }
             glDeleteBuffers(this.vboi)
 
             glDeleteShader(this.vertShaderObj!!)

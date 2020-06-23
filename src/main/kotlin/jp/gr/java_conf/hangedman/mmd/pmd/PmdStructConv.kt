@@ -17,37 +17,49 @@ fun PmdStruct.verticesBuffer(): FloatBuffer {
     return buildFloatBuffer(vertices)
 }
 
+fun PmdStruct.alphaBuffer(): FloatBuffer {
+
+    val vertexMaterialMap = this.vertexMaterialMap
+
+    return this.vertex!!
+            .mapIndexed { i, _ ->
+                val floatList = mutableListOf<Float>()
+                val m = vertexMaterialMap.find { (range, _) -> i <= range }!!.second
+                floatList.add(m.alpha)
+                floatList
+            }.flatten().toFloatArray().run {
+                buildFloatBuffer(this)
+            }
+}
+
 fun PmdStruct.diffuseColorsBuffer(): FloatBuffer {
 
     val vertexMaterialMap = this.vertexMaterialMap
 
-    // 頂点に対する色を設定する
-    val diffuseColors = this.vertex!!
+    return this.vertex!!
             .mapIndexed { i, _ ->
                 val floatList = mutableListOf<Float>()
                 val m = vertexMaterialMap.find { (range, _) -> i <= range }!!.second
                 floatList.addAll(m.diffuseColor.toList())
-                floatList.add(m.alpha)
                 floatList
-            }.flatten().toFloatArray()
-
-    return buildFloatBuffer(diffuseColors)
+            }.flatten().toFloatArray().run {
+                buildFloatBuffer(this)
+            }
 }
 
 fun PmdStruct.ambientColorsBuffer(): FloatBuffer {
 
     val vertexMaterialMap = this.vertexMaterialMap
 
-    // 頂点に対する色を設定する
-    val ambientColors = this.vertex!!
+    return this.vertex!!
             .mapIndexed { i, _ ->
                 val floatList = mutableListOf<Float>()
                 val m = vertexMaterialMap.find { (range, _) -> i <= range }!!.second
                 floatList.addAll(m.ambientColor.toList())
                 floatList
-            }.flatten().toFloatArray()
-
-    return buildFloatBuffer(ambientColors)
+            }.flatten().toFloatArray().run {
+                buildFloatBuffer(this)
+            }
 }
 
 fun PmdStruct.normalsBuffer(): FloatBuffer {
