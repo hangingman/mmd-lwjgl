@@ -1,5 +1,7 @@
 package jp.gr.java_conf.hangedman.mmd
 
+import java.lang.IllegalStateException
+
 object MmdLwjglConstants {
 
     const val width = 800
@@ -58,8 +60,18 @@ object MmdLwjglConstants {
     """
 }
 
-enum class VboIndex(val rawValue: Int) {
+enum class VboIndex(val asInt: Int) {
     VERTEX(0),
-    COLOR(1),
-    NORMAL(2)
+    DIFFUSE_COLOR(1),
+    NORMAL(2);
+
+    fun elementSize(): Int {
+        return when(this) {
+            VERTEX -> 3
+            DIFFUSE_COLOR  -> 4
+            NORMAL -> 3
+            else -> throw IllegalStateException("Invalid VboIndex Enum")
+        }
+    }
 }
+

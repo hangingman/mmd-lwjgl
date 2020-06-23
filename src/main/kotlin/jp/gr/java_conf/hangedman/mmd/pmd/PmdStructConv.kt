@@ -34,6 +34,22 @@ fun PmdStruct.diffuseColorsBuffer(): FloatBuffer {
     return buildFloatBuffer(diffuseColors)
 }
 
+fun PmdStruct.ambientColorsBuffer(): FloatBuffer {
+
+    val vertexMaterialMap = this.vertexMaterialMap
+
+    // 頂点に対する色を設定する
+    val ambientColors = this.vertex!!
+            .mapIndexed { i, _ ->
+                val floatList = mutableListOf<Float>()
+                val m = vertexMaterialMap.find { (range, _) -> i <= range }!!.second
+                floatList.addAll(m.ambientColor.toList())
+                floatList
+            }.flatten().toFloatArray()
+
+    return buildFloatBuffer(ambientColors)
+}
+
 fun PmdStruct.normalsBuffer(): FloatBuffer {
     val normals = this.vertex!!
             .map { v -> v.normalVec }

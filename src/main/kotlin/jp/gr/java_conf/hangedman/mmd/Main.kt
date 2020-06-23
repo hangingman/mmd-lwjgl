@@ -94,47 +94,28 @@ class Main {
 
             val verticesBuffer = pmdStruct.verticesBuffer()            // 頂点
             val diffuseColorsBuffer = pmdStruct.diffuseColorsBuffer()  // 物体色
-            //val ambientColorsBuffer = pmdStruct.ambientColorsBuffer()  // 環境色
+            val ambientColorsBuffer = pmdStruct.ambientColorsBuffer()  // 環境色
             val normalsBuffer = pmdStruct.normalsBuffer()              // 法線
 
-            // val indices = pmdStruct.faceVertIndex
-            val (indicesCount, indicesBuffer) = pmdStruct.faceVertPair()
+            val (indicesCount, indicesBuffer) = pmdStruct.faceVertPair()  // 面頂点
             this.indicesCount = indicesCount
 
-            // Create a new Vertex Array Object in memory and select it (bind)
-            // A VAO can have up to 16 attributes (VBO's) assigned to it by default
+            // Vertex Array Objectをメモリ上に作成し選択する(バインド)
+            // VAOはデフォルトで16の属性(VBO)を設定できる
             this.vao = glGenVertexArrays()
             glBindVertexArray(this.vao)
 
-            // Create a new Vertex Buffer Object in memory and select it (bind)
-            // A VBO is a collection of Vectors which in this case resemble the location of each vertex.
-            this.vbo[VboIndex.VERTEX.rawValue] = glGenBuffers()
-            glBindBuffer(GL_ARRAY_BUFFER, this.vbo[VboIndex.VERTEX.rawValue])
-            glBufferData(GL_ARRAY_BUFFER, verticesBuffer, GL_STATIC_DRAW)
-            // Put the VBO in the attributes list at index 0
-            glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0)
-            // Deselect (bind to 0) the VBO
-            glBindBuffer(GL_ARRAY_BUFFER, 0)
-
-            this.vbo[VboIndex.COLOR.rawValue] = glGenBuffers()
-            glBindBuffer(GL_ARRAY_BUFFER, this.vbo[VboIndex.COLOR.rawValue])
-            glBufferData(GL_ARRAY_BUFFER, diffuseColorsBuffer, GL_STATIC_DRAW)
-            // Put the VBO in the attributes list at index 1
-            glVertexAttribPointer(1, 4, GL_FLOAT, false, 0, 0)
-            glEnableVertexAttribArray(1)
-            // Deselect (bind to 0) the VBO
-            glBindBuffer(GL_ARRAY_BUFFER, 0)
-
-            this.vbo[VboIndex.NORMAL.rawValue] = glGenBuffers()
-            glBindBuffer(GL_ARRAY_BUFFER, this.vbo[VboIndex.NORMAL.rawValue])
-            glBufferData(GL_ARRAY_BUFFER, normalsBuffer, GL_STATIC_DRAW)
-            // Put the VBO in the attributes list at index 2
-            glVertexAttribPointer(2, 3, GL_FLOAT, false, 0, 0)
-            glEnableVertexAttribArray(2)
-            // Deselect (bind to 0) the VBO
-            glBindBuffer(GL_ARRAY_BUFFER, 0)
-
-            // Deselect (bind to 0) the VAO
+            // 新しいVertex Buffer Objectをメモリ上に作成し選択する(バインド), VBOはベクトルの集まり
+            listOf(VboIndex.VERTEX, VboIndex.DIFFUSE_COLOR, VboIndex.NORMAL).zip(
+                    listOf(verticesBuffer, diffuseColorsBuffer, normalsBuffer)
+            ).forEach { (index, buffer) ->
+                this.vbo[index.asInt] = glGenBuffers()
+                glBindBuffer(GL_ARRAY_BUFFER, this.vbo[index.asInt])
+                glBufferData(GL_ARRAY_BUFFER, buffer, GL_STATIC_DRAW)
+                glVertexAttribPointer(index.asInt, index.elementSize(), GL_FLOAT, false, 0, 0)
+                glEnableVertexAttribArray(index.asInt)
+                glBindBuffer(GL_ARRAY_BUFFER, 0)
+            }
             glBindVertexArray(0)
 
             // Create a new VBO for the indices and select it (bind)
@@ -353,9 +334,9 @@ class Main {
 
         fun cleanup() {
             glDeleteVertexArrays(this.vao)
-            glDeleteBuffers(this.vbo[VboIndex.VERTEX.rawValue])
-            glDeleteBuffers(this.vbo[VboIndex.COLOR.rawValue])
-            glDeleteBuffers(this.vbo[VboIndex.NORMAL.rawValue])
+            glDeleteBuffers(this.vbo[VboIndex.VERTEX.asInt])
+            glDeleteBuffers(this.vbo[VboIndex.DIFFUSE_COLOR.asInt])
+            glDeleteBuffers(this.vbo[VboIndex.NORMAL.asInt])
             glDeleteBuffers(this.vboi)
 
             glDeleteShader(this.vertShaderObj!!)
