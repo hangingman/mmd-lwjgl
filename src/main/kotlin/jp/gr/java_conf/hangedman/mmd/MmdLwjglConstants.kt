@@ -19,6 +19,7 @@ object MmdLwjglConstants {
         in vec3 ambientColor;
         in vec3 specularColor;
         in vec3 normal;
+        in float shininess;
         
         // 次のフラグメントシェーダーに渡す頂点カラー
         out float vAlpha;
@@ -27,6 +28,7 @@ object MmdLwjglConstants {
         out vec3 vSpecularColor;
         out vec3 vNormal;
         out vec3 vPosition;
+        out float vShininess;
         
         // プログラムから指定されるグローバルGLSL変数
         uniform mat4 model;
@@ -53,6 +55,7 @@ object MmdLwjglConstants {
             vSpecularColor = specularColor;
             vNormal = normal;
             vPosition = position;
+            vShininess = shininess;
             
             // gl_Positionが最終的な頂点座標
             gl_Position = mvp * vec4(position, 1.0);
@@ -64,6 +67,7 @@ object MmdLwjglConstants {
         #version 330
         
         uniform vec3 uLightPosition;
+        uniform mat4 view;
         
         in float vAlpha;
         in vec3 vDiffuseColor;
@@ -71,6 +75,7 @@ object MmdLwjglConstants {
         in vec3 vSpecularColor;
         in vec3 vNormal;
         in vec3 vPosition;
+        in float vShininess;
         
         out vec4 fragColor;   // フラグメントシェーダから出力する色
         
@@ -81,12 +86,14 @@ object MmdLwjglConstants {
 
             vec3 lightDirection = normalize(uLightPosition - vPosition);
             vec3 normal = normalize(vNormal);
+            vec3 viewPosition = vec3(0.0, 0.0, 0.0);  // たぶんモデルの位置？
+            vec3 viewDirection = normalize(viewPosition - vPosition); // (model pos - vertex pos) を正規化
             
             vec3 ambientColor = ambientStrength * vAmbientColor;
             vec3 diffuseColor = diffuseStrength * max(0.0, dot(normal, lightDirection)) * vDiffuseColor;
-            vec3 specularColor = specularStrength * vSpecularColor;
-            vec3 reflectDirection = reflect(-lightDirection, normal);
-    
+            vec3 reflectDirection = reflect(-lightDirection, normal); 
+            vec3 specularColor = specularStrength * pow(max(dot(viewDirection, reflectDirection), 0.0), vShininess) * vSpecularColor;
+             
             fragColor = vec4(ambientColor + diffuseColor + specularColor, vAlpha);
         }
     """
@@ -98,7 +105,8 @@ enum class VboIndex(val asInt: Int) {
     DIFFUSE_COLOR(2),
     AMBIENT_COLOR(3),
     SPECULAR_COLOR(4),
-    NORMAL(5);
+    NORMAL(5),
+    SHININESS(6);
 
     fun elementSize(): Int {
         return when(this) {
@@ -108,6 +116,7 @@ enum class VboIndex(val asInt: Int) {
             AMBIENT_COLOR -> 3
             SPECULAR_COLOR -> 3
             NORMAL -> 3
+            SHININESS -> 1
             else -> throw IllegalStateException("Invalid VboIndex Enum")
         }
     }

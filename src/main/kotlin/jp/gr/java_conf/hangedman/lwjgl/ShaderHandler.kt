@@ -16,12 +16,14 @@ object ShaderHandler {
         // バーテックスシェーダーのソースプログラムのコンパイル
         glCompileShader(vertexShader)
         if (glGetShaderi(vertexShader, GL_COMPILE_STATUS) != GL_TRUE) {
-            throw IllegalStateException("Failed to compile vertex shader...")
+            val message = glGetShaderInfoLog(vertexShader, glGetShaderi(vertexShader, GL_INFO_LOG_LENGTH))
+            throw IllegalStateException(message)
         }
         // フラグメントシェーダーのソースプログラムのコンパイル
         glCompileShader(fragmentShader)
         if (glGetShaderi(fragmentShader, GL_COMPILE_STATUS) != GL_TRUE) {
-            throw IllegalStateException("Failed to compile fragment shader...")
+            val message = glGetShaderInfoLog(fragmentShader, glGetShaderi(fragmentShader, GL_INFO_LOG_LENGTH))
+            throw IllegalStateException(message)
         }
 
         // プログラムオブジェクトの作成

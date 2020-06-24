@@ -77,6 +77,21 @@ fun PmdStruct.specularColorsBuffer(): FloatBuffer {
             }
 }
 
+fun PmdStruct.shininessBuffer(): FloatBuffer {
+
+    val vertexMaterialMap = this.vertexMaterialMap
+
+    return this.vertex!!
+            .mapIndexed { i, _ ->
+                val floatList = mutableListOf<Float>()
+                val m = vertexMaterialMap.find { (range, _) -> i <= range }!!.second
+                floatList.add(m.specularity)
+                floatList
+            }.flatten().toFloatArray().run {
+                buildFloatBuffer(this)
+            }
+}
+
 fun PmdStruct.normalsBuffer(): FloatBuffer {
     val normals = this.vertex!!
             .map { v -> v.normalVec }

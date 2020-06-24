@@ -97,6 +97,7 @@ class Main {
             val ambientColorsBuffer = pmdStruct.ambientColorsBuffer()   // 環境色
             val specularColorsBuffer = pmdStruct.specularColorsBuffer() // 光沢色
             val normalsBuffer = pmdStruct.normalsBuffer()               // 法線
+            val shininessBuffer = pmdStruct.shininessBuffer()           // 光沢度
 
             val (indicesCount, indicesBuffer) = pmdStruct.faceVertPair()  // 面頂点
             this.indicesCount = indicesCount
@@ -113,7 +114,9 @@ class Main {
                     VboIndex.DIFFUSE_COLOR to diffuseColorsBuffer,
                     VboIndex.AMBIENT_COLOR to ambientColorsBuffer,
                     VboIndex.SPECULAR_COLOR to specularColorsBuffer,
-                    VboIndex.NORMAL to normalsBuffer
+                    VboIndex.NORMAL to normalsBuffer,
+                    VboIndex.SHININESS to shininessBuffer
+
             ).forEach { (index, buffer) ->
                 this.vbo[index.asInt] = glGenBuffers()
                 glBindBuffer(GL_ARRAY_BUFFER, this.vbo[index.asInt])
@@ -242,7 +245,7 @@ class Main {
 
             // 照明の座標
             val uLightPosition = glGetUniformLocation(this.shader!!, "uLightPosition")
-            glUniform3f(uLightPosition, -5f, 5f, 5f)
+            glUniform3f(uLightPosition, 20f, 20f, -20f)
         }
 
         private fun computeMatricesFromInputs(windowId: Long) {
