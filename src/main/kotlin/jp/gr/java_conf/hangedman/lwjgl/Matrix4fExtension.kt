@@ -28,14 +28,5 @@ fun Matrix4f.createProjectionMatrix(foV: Float): Matrix4f {
 
     // projection（投影）の方法は複数ある
     // とりあえずズームが動いているorthoで
-
-    //val ratio: Float = width.get().toFloat() / height.get()
-    //val ratio = foV
-    //return Matrix4f().ortho(-ratio, ratio, -1f, 1f, -1f, 1f)
-
     return Matrix4f().ortho(-foV, foV, -foV, foV, -foV, foV)
-
-    //return Matrix4f().perspective(
-    //        Math.toRadians(foV.toDouble()).toFloat(), 4.0f / 3.0f, 0.1f, 100.0f
-    //)
 }

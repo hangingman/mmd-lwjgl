@@ -4,7 +4,7 @@ import jp.gr.java_conf.hangedman.lwjgl.ShaderHandler.makeShader
 import jp.gr.java_conf.hangedman.lwjgl.createProjectionMatrix
 import jp.gr.java_conf.hangedman.lwjgl.value
 import jp.gr.java_conf.hangedman.mmd.Main.Companion.cleanup
-import jp.gr.java_conf.hangedman.mmd.Main.Companion.enter
+import jp.gr.java_conf.hangedman.mmd.Main.Companion.initialize
 import jp.gr.java_conf.hangedman.mmd.Main.Companion.render
 import jp.gr.java_conf.hangedman.mmd.Main.Companion.update
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.fragmentSource
@@ -24,18 +24,22 @@ import org.lwjgl.glfw.GLFWVidMode
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL33.*
 import org.lwjgl.opengl.GLUtil
+import org.lwjgl.system.Configuration
 import org.lwjgl.system.MemoryUtil.NULL
-import org.slf4j.LoggerFactory
 import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J
 
 
 fun main(args: Array<String>) {
+
+    System.setProperty("org.lwjgl.system.stackSize", "1024")
+
     println("Hello, LWJGL - ${Version.getVersion()} !")
+    println("         stack size - ${Configuration.STACK_SIZE.get()}kb !")
     println("       OpenGL - ${GL_VERSION} !")
     println("       GLFW - ${glfwGetVersionString()} !")
 
     val pmdStruct = PmdLoader.loadPmdFile("HatsuneMiku.pmd")
-    val windowId = enter(pmdStruct)
+    val windowId = initialize(pmdStruct)
 
     while (!glfwWindowShouldClose(windowId)) {
         glfwPollEvents()
@@ -52,8 +56,6 @@ fun main(args: Array<String>) {
 class Main {
 
     companion object {
-        private val logger = LoggerFactory.getLogger(this::class.java)
-
         // VAO, VBO, VBOI
         private var vao: Int = 0
         private var vbo: IntArray = IntArray(VboIndex.values().size)
@@ -65,25 +67,14 @@ class Main {
         private var vertShaderObj: Int? = null
         private var fragShaderObj: Int? = null
 
-        // モデルの位置など
+        // モデルの位置
         private var position = Vector3f(0f, 0f, 5f)
-        // 水平角、-Z方向
-        private var horizontalAngle = 3.14f
-
-        // 鉛直角、0、水平線を眺めている
-        private var verticalAngle = 0.0f
 
         // 初期視野
         private var initialFoV = 45.0f
         private var fov = initialFoV
-        private var rotation = 0f
-        private var mouseWheelVelocity = 0f
-        private var speed = 10.0f // 3 units / second
-        private var mouseSpeed = 0.005f
+        private var rotation = 1.0f
         private var lastTime = glfwGetTime()
-
-        private var direction = Vector3f()
-        private var up = Vector3f()
 
         private var uniModel: Int? = null
         private var modelMatrix = Matrix4f()
@@ -137,7 +128,7 @@ class Main {
         }
 
         // 初期化してシェーダーを返す
-        fun enter(pmdStruct: PmdStruct): Long {
+        fun initialize(pmdStruct: PmdStruct): Long {
             // GLFW初期化
             glfwInit()
             glfwDefaultWindowHints()
@@ -196,7 +187,10 @@ class Main {
                 }
             })
             glfwSetCursorPosCallback(windowId) { _, x, _ ->
-                rotation = (x.toFloat() / width - 0.5f) * 2f * Math.PI.toFloat()
+                if (glfwGetMouseButton(windowId, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+                    // 右クリックしている場合にモデルを動かす
+                    rotation = (x.toFloat() / width - 0.5f) * 2f * Math.PI.toFloat()
+                }
             }
 
             // ここから描画情報の読み込み
@@ -206,12 +200,6 @@ class Main {
                 this.fragShaderObj = fragShaderObj
                 this.shader = shader
             }
-
-            val floatSize = 4
-            // 頂点シェーダーのinパラメータ"position"と対応
-            val posAttrib = glGetAttribLocation(this.shader!!, "position")
-            glEnableVertexAttribArray(posAttrib)
-            glVertexAttribPointer(posAttrib, 3, GL_FLOAT, false, 6 * floatSize, 0)
 
             return windowId
         }
@@ -223,10 +211,6 @@ class Main {
             // Model行列(描画対象のモデルの座標からOpenGLのワールド座標への相対値)
             // 頂点シェーダーのグローバルGLSL変数"model"に設定
             this.uniModel = glGetUniformLocation(this.shader!!, "model")
-            // 1秒で1回転?
-            //val angle = 360 * (glfwGetTime() % 1).toFloat()
-            //val angle = (glfwGetTime() - lastTime).toFloat() * 30
-            //this.modelMatrix = this.modelMatrix.rotateLocalY(angle)
 
             // View行列(OpenGLのワールド座標からカメラの座標への相対値)
             // 頂点シェーダーのグローバルGLSL変数"view"に設定
@@ -261,7 +245,7 @@ class Main {
             val deltaTime = (currentTime - lastTime).toFloat()
             lastTime = currentTime
 
-            position.set(10f * cos(rotation), 10f, 10f * sin(rotation))
+            position.set(-1f * cos(rotation), 0f, -5.0f * sin(rotation))
 
             /**
             val windowXBuffer = BufferUtils.createIntBuffer(1)
