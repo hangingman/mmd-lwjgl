@@ -5,6 +5,7 @@ import jp.gr.java_conf.hangedman.mmd.pmd.PmdStruct
 import org.apache.commons.lang3.time.DurationFormatUtils
 import org.apache.commons.lang3.time.StopWatch
 import org.slf4j.LoggerFactory
+import java.io.File
 import java.io.InputStream
 
 object PmdLoader {
@@ -27,6 +28,10 @@ object PmdLoader {
     }
 
     internal fun getResourceAsStream(file: String): InputStream {
+        if (File(file).exists()) {
+            return File(file).inputStream()
+        }
+
         return this::class.java.classLoader.getResourceAsStream(file)
                 ?: throw IllegalStateException("Failed to load file $file")
     }

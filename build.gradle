@@ -48,6 +48,7 @@ dependencies {
     implementation "io.github.microutils:kotlin-logging:1.7.9"
     implementation "org.joml:joml:1.9.24"
     implementation "org.apache.commons:commons-lang3:3.7"
+    implementation "commons-cli:commons-cli:1.4"
     implementation "ch.qos.logback:logback-classic:1.2.3"
     implementation "com.igormaznitsa:jbbp:2.0.1"
     implementation "com.github.doyaaaaaken:kotlin-csv-jvm:0.10.4"

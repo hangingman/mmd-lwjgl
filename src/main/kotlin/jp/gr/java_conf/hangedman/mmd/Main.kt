@@ -12,6 +12,7 @@ import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.height
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.title
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.vertexSource
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.width
+import jp.gr.java_conf.hangedman.mmd.MmdLwjglOptionParser.parse
 import jp.gr.java_conf.hangedman.mmd.pmd.*
 import org.joml.Math.cos
 import org.joml.Math.sin
@@ -31,6 +32,7 @@ import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J
 
 fun main(args: Array<String>) {
 
+    val cmd = parse(args)
     System.setProperty("org.lwjgl.system.stackSize", "1024")
 
     println("Hello, LWJGL - ${Version.getVersion()} !")
@@ -38,7 +40,8 @@ fun main(args: Array<String>) {
     println("       OpenGL - ${GL_VERSION} !")
     println("       GLFW - ${glfwGetVersionString()} !")
 
-    val pmdStruct = PmdLoader.loadPmdFile("HatsuneMiku.pmd")
+    val modelPath = if (cmd.hasOption("m")) cmd.getOptionValue("m") else "HatsuneMiku.pmd"
+    val pmdStruct = PmdLoader.loadPmdFile(modelPath)
     val windowId = initialize(pmdStruct)
 
     while (!glfwWindowShouldClose(windowId)) {
