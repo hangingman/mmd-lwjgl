@@ -20,6 +20,7 @@ object MmdLwjglConstants {
         in vec3 specularColor;
         in vec3 normal;
         in float shininess;
+        in int isEdge;
         
         // 次のフラグメントシェーダーに渡す頂点カラー
         out float vAlpha;
@@ -29,25 +30,17 @@ object MmdLwjglConstants {
         out vec3 vNormal;
         out vec3 vPosition;
         out float vShininess;
+        out float vIsEdge;
         
         // プログラムから指定されるグローバルGLSL変数
         uniform mat4 model;
         uniform mat4 view;
         uniform mat4 projection;
+        uniform float uEdgeSize;
         
         void main() {
-            // フラグメントシェーダーには頂点の色をそのまま渡す
-            //vertexDiffuseColor = diffuseColor;
             // ModelViewProjection行列を求める
             mat4 mvp = projection * view * model;
-            // m逆転置行列 (Model Inverse Transposeの略)
-            mat4 mit = transpose(inverse(model));
-            //vec3 n = normalize(mat3(mit) * normal); // 法線のm変換
-            //float nl = clamp(dot(n, 0.0), 0.0, 1.0); // 法線とライトの内積を算出
-            //vec3 c = diffuseColor.rgb * nl; // 最終色を算出 
-            //c = clamp(c, 0.0, 1.0); // 0.0 ~ 1.0に色を収める
-            
-            //vertexDiffuseColor = vec4(c, diffuseColor.a);
             
             vAlpha = alpha;
             vDiffuseColor = diffuseColor;
@@ -56,6 +49,16 @@ object MmdLwjglConstants {
             vNormal = normal;
             vPosition = position;
             vShininess = shininess;
+            vIsEdge = isEdge;
+            
+            if (isEdge == 1)
+            {
+                vec4 p0 = mvp * vec4(position, 1.0);
+                vec4 p1 = mvp * vec4(position + normal, 1.0);
+                vec4 norm = normalize(p1 - p0);
+                gl_Position = p0 + norm * uEdgeSize / 10.0f;
+                return;
+            }
             
             // gl_Positionが最終的な頂点座標
             gl_Position = mvp * vec4(position, 1.0);
@@ -68,6 +71,7 @@ object MmdLwjglConstants {
         
         uniform vec3 uLightPosition;
         uniform mat4 view;
+        uniform vec3 uEdgeColor;
         
         in float vAlpha;
         in vec3 vDiffuseColor;
@@ -76,6 +80,7 @@ object MmdLwjglConstants {
         in vec3 vNormal;
         in vec3 vPosition;
         in float vShininess;
+        in float vIsEdge;
         
         out vec4 fragColor;   // フラグメントシェーダから出力する色
         
@@ -94,6 +99,11 @@ object MmdLwjglConstants {
             vec3 reflectDirection = reflect(-lightDirection, normal); 
             vec3 specularColor = specularStrength * pow(max(dot(viewDirection, reflectDirection), 0.0), vShininess) * vSpecularColor;
              
+            if (vIsEdge == 1)
+            {
+                fragColor = vec4(uEdgeColor, vAlpha);
+                return;
+            }
             fragColor = vec4(ambientColor + diffuseColor + specularColor, vAlpha);
         }
     """
@@ -106,7 +116,8 @@ enum class VboIndex(val asInt: Int) {
     AMBIENT_COLOR(3),
     SPECULAR_COLOR(4),
     NORMAL(5),
-    SHININESS(6);
+    SHININESS(6),
+    EDGE(7);
 
     fun elementSize(): Int {
         return when(this) {
@@ -117,6 +128,7 @@ enum class VboIndex(val asInt: Int) {
             SPECULAR_COLOR -> 3
             NORMAL -> 3
             SHININESS -> 1
+            EDGE -> 1
             else -> throw IllegalStateException("Invalid VboIndex Enum")
         }
     }

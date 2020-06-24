@@ -92,6 +92,21 @@ fun PmdStruct.shininessBuffer(): FloatBuffer {
             }
 }
 
+fun PmdStruct.edgeFlagBuffer(): FloatBuffer {
+
+    val vertexMaterialMap = this.vertexMaterialMap
+
+    return this.vertex!!
+            .mapIndexed { i, _ ->
+                val fList = mutableListOf<Float>()
+                val m = vertexMaterialMap.find { (range, _) -> i <= range }!!.second
+                fList.add(m.edgeFlag.toFloat())
+                fList
+            }.flatten().toFloatArray().run {
+                buildFloatBuffer(this)
+            }
+}
+
 fun PmdStruct.normalsBuffer(): FloatBuffer {
     val normals = this.vertex!!
             .map { v -> v.normalVec }

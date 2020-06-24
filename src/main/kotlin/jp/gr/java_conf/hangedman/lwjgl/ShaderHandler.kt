@@ -17,13 +17,13 @@ object ShaderHandler {
         glCompileShader(vertexShader)
         if (glGetShaderi(vertexShader, GL_COMPILE_STATUS) != GL_TRUE) {
             val message = glGetShaderInfoLog(vertexShader, glGetShaderi(vertexShader, GL_INFO_LOG_LENGTH))
-            throw IllegalStateException(message)
+            throw IllegalStateException("vertex shader is invalid\n$message")
         }
         // フラグメントシェーダーのソースプログラムのコンパイル
         glCompileShader(fragmentShader)
         if (glGetShaderi(fragmentShader, GL_COMPILE_STATUS) != GL_TRUE) {
             val message = glGetShaderInfoLog(fragmentShader, glGetShaderi(fragmentShader, GL_INFO_LOG_LENGTH))
-            throw IllegalStateException(message)
+            throw IllegalStateException("fragment shader is invalid\n$message")
         }
 
         // プログラムオブジェクトの作成
@@ -33,9 +33,12 @@ object ShaderHandler {
         glAttachShader(shader, fragmentShader)
         // シェーダーにデータの位置をバインド
         glBindFragDataLocation(shader, 0, "fragColor")
-
         // シェーダープログラムのリンクと実行
         glLinkProgram(shader)
+        if (glGetProgrami(shader, GL_LINK_STATUS) != GL_TRUE) {
+            val message = glGetProgramInfoLog(shader, glGetProgrami(shader, GL_INFO_LOG_LENGTH))
+            throw IllegalStateException("linking shader is invalid\n$message")
+        }
         glUseProgram(shader)
 
         return Triple(vertexShader, fragmentShader, shader)

@@ -98,6 +98,7 @@ class Main {
             val specularColorsBuffer = pmdStruct.specularColorsBuffer() // 光沢色
             val normalsBuffer = pmdStruct.normalsBuffer()               // 法線
             val shininessBuffer = pmdStruct.shininessBuffer()           // 光沢度
+            val edgeFlagBuffer = pmdStruct.edgeFlagBuffer()             // エッジの有無
 
             val (indicesCount, indicesBuffer) = pmdStruct.faceVertPair()  // 面頂点
             this.indicesCount = indicesCount
@@ -115,8 +116,8 @@ class Main {
                     VboIndex.AMBIENT_COLOR to ambientColorsBuffer,
                     VboIndex.SPECULAR_COLOR to specularColorsBuffer,
                     VboIndex.NORMAL to normalsBuffer,
-                    VboIndex.SHININESS to shininessBuffer
-
+                    VboIndex.SHININESS to shininessBuffer,
+                    VboIndex.EDGE to edgeFlagBuffer
             ).forEach { (index, buffer) ->
                 this.vbo[index.asInt] = glGenBuffers()
                 glBindBuffer(GL_ARRAY_BUFFER, this.vbo[index.asInt])
@@ -246,6 +247,12 @@ class Main {
             // 照明の座標
             val uLightPosition = glGetUniformLocation(this.shader!!, "uLightPosition")
             glUniform3f(uLightPosition, 20f, 20f, -20f)
+
+            // エッジの太さ, 色
+            val uEdgeSize = glGetUniformLocation(this.shader!!, "uEdgeSize")
+            glUniform1f(uEdgeSize, 0.1f)
+            val uEdgeColor = glGetUniformLocation(this.shader!!, "uEdgeColor")
+            glUniform3f(uEdgeColor, 0f, 0f, 0f)
         }
 
         private fun computeMatricesFromInputs(windowId: Long) {
