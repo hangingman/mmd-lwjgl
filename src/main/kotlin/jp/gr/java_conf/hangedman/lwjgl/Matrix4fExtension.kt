@@ -28,5 +28,12 @@ fun Matrix4f.createProjectionMatrix(foV: Float): Matrix4f {
 
     // projection（投影）の方法は複数ある
     // とりあえずズームが動いているorthoで
-    return Matrix4f().ortho(-foV, foV, -foV, foV, -foV, foV)
+    return Matrix4f().ortho(
+            -foV,
+            foV,
+            -foV,
+            foV,
+            0.1f,
+            100f
+    )
 }

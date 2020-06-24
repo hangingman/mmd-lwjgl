@@ -68,7 +68,7 @@ class Main {
         private var fragShaderObj: Int? = null
 
         // モデルの位置
-        private var position = Vector3f(0f, 0f, 5f)
+        private var position = Vector3f(0f, 0f, 0f)
 
         // 初期視野
         private var initialFoV = 45.0f
@@ -179,11 +179,11 @@ class Main {
                     } else {
                         fov *= 1f / 1.05f;
                     }
-                    if (fov < 10.0f) {
-                        fov = 10.0f;
-                    } else if (fov > 120.0f) {
-                        fov = 120.0f;
-                    }
+//                    if (fov < 10.0f) {
+//                        fov = 10.0f;
+//                    } else if (fov > 120.0f) {
+//                        fov = 120.0f;
+//                    }
                 }
             })
             glfwSetCursorPosCallback(windowId) { _, x, _ ->
