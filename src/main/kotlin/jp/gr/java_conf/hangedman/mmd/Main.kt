@@ -79,9 +79,6 @@ class Main {
         private var rotation = 1.0f
         private var lastTime = glfwGetTime()
 
-        private var uniModel: Int? = null
-        private var modelMatrix = Matrix4f()
-
         // VAO, VBO, VBOIの読み込み
         fun loadPolygonData(pmdStruct: PmdStruct) {
 
@@ -182,11 +179,6 @@ class Main {
                     } else {
                         fov *= 1f / 1.05f;
                     }
-//                    if (fov < 10.0f) {
-//                        fov = 10.0f;
-//                    } else if (fov > 120.0f) {
-//                        fov = 120.0f;
-//                    }
                 }
             })
             glfwSetCursorPosCallback(windowId) { _, x, _ ->
@@ -213,7 +205,9 @@ class Main {
 
             // Model行列(描画対象のモデルの座標からOpenGLのワールド座標への相対値)
             // 頂点シェーダーのグローバルGLSL変数"model"に設定
-            this.uniModel = glGetUniformLocation(this.shader!!, "model")
+            val uniModel = glGetUniformLocation(this.shader!!, "model")
+            // updateメソッドで求めた回転行列をグローバルGLSL変数に設定
+            glUniformMatrix4fv(uniModel, false, Matrix4f().value())
 
             // View行列(OpenGLのワールド座標からカメラの座標への相対値)
             // 頂点シェーダーのグローバルGLSL変数"view"に設定
@@ -249,64 +243,6 @@ class Main {
             lastTime = currentTime
 
             position.set(-1f * cos(rotation), 0f, -5.0f * sin(rotation))
-
-            /**
-            val windowXBuffer = BufferUtils.createIntBuffer(1)
-            val windowYBuffer = BufferUtils.createIntBuffer(1)
-            glfwGetWindowSize(windowId, windowXBuffer, windowYBuffer)
-            val windowXHalfPos = (windowXBuffer.get(0) / 2).toDouble()
-            val windowYHalfPos = (windowYBuffer.get(0) / 2).toDouble()
-
-            // マウスの位置を取得
-            val xBuffer = BufferUtils.createDoubleBuffer(1)
-            val yBuffer = BufferUtils.createDoubleBuffer(1)
-            glfwGetCursorPos(windowId, xBuffer, yBuffer)
-            val xpos = xBuffer.get(0)
-            val ypos = yBuffer.get(0)
-            //glfwSetCursorPos(windowId, windowXHalfPos, windowYHalfPos)
-
-            horizontalAngle += mouseSpeed * deltaTime * (windowXHalfPos - xpos).toFloat()
-            verticalAngle += mouseSpeed * deltaTime * (windowYHalfPos - ypos).toFloat()
-
-            //println("横の角度: ${horizontalAngle}, 縦の角度 ${verticalAngle}")
-
-            this.direction = Vector3f().apply {
-                x = cos(verticalAngle) * sin(horizontalAngle)
-                y = sin(verticalAngle)
-                z = cos(verticalAngle) * cos(horizontalAngle)
-            }
-
-            val right = Vector3f().apply {
-                x = sin(horizontalAngle - 3.14f / 2.0f)
-                y = 0f
-                z = cos(horizontalAngle - 3.14f / 2.0f)
-            }
-
-            this.up = Vector3f(direction).cross(right)
-
-            //println("direction: $direction, up: $up, position: $position")
-
-            // 前へ動きます。
-            if (glfwGetKey(windowId, GLFW_KEY_UP) == GLFW_PRESS) {
-                position = position.add(direction.mul(deltaTime * speed))
-                //logger.info("position ${position.toString()}")
-            }
-            // 後ろへ動きます。
-            if (glfwGetKey(windowId, GLFW_KEY_DOWN) == GLFW_PRESS) {
-                position = position.sub(direction.mul(deltaTime * speed))
-                //logger.info("position ${position.toString()}")
-            }
-            // 前を向いたまま、右へ平行移動します。
-            if (glfwGetKey(windowId, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-                position = position.add(right.mul(deltaTime * speed))
-                //logger.info("position ${position.toString()}")
-            }
-            // 前を向いたまま、左へ平行移動します。
-            if (glfwGetKey(windowId, GLFW_KEY_LEFT) == GLFW_PRESS) {
-                position = position.sub(right.mul(deltaTime * speed))
-                //logger.info("position ${position.toString()}")
-            }
-            */
         }
 
         fun render() {
@@ -320,8 +256,6 @@ class Main {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.vboi)
 
             glUseProgram(this.shader!!)
-            // updateメソッドで求めた回転行列をグローバルGLSL変数に設定
-            glUniformMatrix4fv(this.uniModel!!, false, this.modelMatrix.value())
 
             // Draw the vertices
             glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_SHORT, 0)
