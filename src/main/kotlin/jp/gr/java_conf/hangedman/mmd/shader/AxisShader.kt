@@ -11,9 +11,17 @@ object AxisShader {
         
         out vec3 vColors;
         
+        // プログラムから指定されるグローバルGLSL変数
+        uniform mat4 model;
+        uniform mat4 view;
+        uniform mat4 projection;
+        
         void main() {
+            mat4 mvp = projection * view * model;
             vColors = colors;
+            
             gl_Position = vec4(position, 1.0);
+            //gl_Position = mvp * vec4(position, 1.0);
         }
     """
 

@@ -120,12 +120,6 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
                 }
             }
         })
-        glfwSetCursorPosCallback(windowId) { _, x, _ ->
-            if (glfwGetMouseButton(windowId, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-                // 右クリックしている場合にモデルを動かす
-                rotation = (x.toFloat() / width - 0.5f) * 2f * Math.PI.toFloat()
-            }
-        }
 
         // ここから描画情報の読み込み
         load(pmdStruct)
@@ -220,5 +214,12 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
         glDeleteShader(this.vertShaderObj)
         glDeleteShader(this.fragShaderObj)
         glDeleteProgram(this.shader)
+    }
+
+    override fun cursorPosCallback(windowId: Long, xpos: Double, ypos: Double) {
+        if (glfwGetMouseButton(windowId, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+            // 右クリックしている場合にモデルを動かす
+            rotation = (xpos.toFloat() / width - 0.5f) * 2f * Math.PI.toFloat()
+        }
     }
 }

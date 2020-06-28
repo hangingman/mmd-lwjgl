@@ -63,7 +63,6 @@ object ModelShader {
         #version 330
         
         uniform vec3 uLightPosition;
-        uniform mat4 view;
         uniform vec3 uEdgeColor;
         
         in float vAlpha;

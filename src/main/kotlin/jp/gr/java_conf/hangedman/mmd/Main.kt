@@ -4,6 +4,7 @@ import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.height
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.title
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.width
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglOptionParser.parse
+import jp.gr.java_conf.hangedman.mmd.renderable_if.Renderable
 import jp.gr.java_conf.hangedman.mmd.renderable_impl.MmdLwjgl
 import jp.gr.java_conf.hangedman.mmd.renderable_impl.XyzAxis
 import org.lwjgl.Version
@@ -36,6 +37,10 @@ fun main(args: Array<String>) {
             XyzAxis(windowId).initialize()
     )
 
+    // コールバック関数の設定
+    setCallbacks(windowId, renderables)
+
+    // 描画ループの開始
     while (!glfwWindowShouldClose(windowId)) {
         glfwPollEvents()
         renderables.forEach { it.render() }
@@ -72,5 +77,11 @@ fun initWindow(): Long {
             (videoMode.height() - height) / 2
     )
     return windowId
+}
+
+fun setCallbacks(windowId: Long, renderables: List<Renderable>) {
+    glfwSetCursorPosCallback(windowId) { windowId, xpos, ypos ->
+        renderables.forEach { r -> r.cursorPosCallback(windowId, xpos, ypos) }
+    }
 }
 
