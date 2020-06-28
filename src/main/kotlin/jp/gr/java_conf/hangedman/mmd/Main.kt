@@ -4,8 +4,8 @@ import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.height
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.title
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.width
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglOptionParser.parse
-import jp.gr.java_conf.hangedman.mmd.renderable_if.Renderable
 import jp.gr.java_conf.hangedman.mmd.renderable_impl.MmdLwjgl
+import jp.gr.java_conf.hangedman.mmd.renderable_impl.XyzAxis
 import org.lwjgl.Version
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWVidMode
@@ -30,8 +30,10 @@ fun main(args: Array<String>) {
     val modelPath = if (cmd.hasOption("m")) cmd.getOptionValue("m") else "HatsuneMiku.pmd"
     val pmdStruct = PmdLoader.loadPmdFile(modelPath)
 
-    val renderables = listOf<Renderable>(
-            MmdLwjgl(windowId).initialize(pmdStruct)
+    // 複数のメッシュを描画する
+    val renderables = listOf(
+            MmdLwjgl(windowId).initialize(pmdStruct),
+            XyzAxis(windowId).initialize()
     )
 
     while (!glfwWindowShouldClose(windowId)) {

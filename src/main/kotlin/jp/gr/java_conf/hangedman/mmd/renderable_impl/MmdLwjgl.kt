@@ -43,8 +43,9 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
     private var lastTime = glfwGetTime()
 
     // VAO, VBO, VBOIの読み込み
-    private fun load(pmdStruct: PmdStruct) {
+    private fun load(pmdStruct: PmdStruct?) {
 
+        requireNotNull(pmdStruct)
         val verticesBuffer = pmdStruct.verticesBuffer()             // 頂点
         val alphaBuffer = pmdStruct.alphaBuffer()                   // 物体色透過率
         val diffuseColorsBuffer = pmdStruct.diffuseColorsBuffer()   // 物体色
@@ -91,7 +92,7 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
     }
 
     // 初期化してシェーダーを返す
-    override fun initialize(pmdStruct: PmdStruct): MmdLwjgl {
+    override fun initialize(pmdStruct: PmdStruct?): MmdLwjgl {
         // コンテキストの作成
         glfwMakeContextCurrent(windowId)
         glfwSwapInterval(1)
@@ -129,7 +130,6 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
         // ここから描画情報の読み込み
         load(pmdStruct)
 
-        // 0番目のシェーダーをモデル用に使う
         makeShader(modelVertexSource, modelFragmentSource).let { (vertShaderObj, fragShaderObj, shader) ->
             this.vertShaderObj = vertShaderObj
             this.fragShaderObj = fragShaderObj
@@ -141,7 +141,7 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
 
     override fun update(windowId: Long) {
         // キーボードとマウスのインプットからMVP行列を計算する
-        computeMatricesFromInputs(windowId)
+        computeMatricesFromInputs()
 
         // Model行列(描画対象のモデルの座標からOpenGLのワールド座標への相対値)
         // 頂点シェーダーのグローバルGLSL変数"model"に設定
@@ -176,10 +176,10 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
         glUniform3f(uEdgeColor, 0f, 0f, 0f)
     }
 
-    private fun computeMatricesFromInputs(windowId: Long) {
+    private fun computeMatricesFromInputs() {
 
         val currentTime = glfwGetTime()
-        val deltaTime = (currentTime - lastTime).toFloat()
+        //val deltaTime = (currentTime - lastTime).toFloat()
         lastTime = currentTime
 
         position.set(-1f * cos(rotation), 0f, -5.0f * sin(rotation))
@@ -199,7 +199,7 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
         // 頂点情報を描画する
         glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_SHORT, 0)
 
-        // Put everything back to default (deselect)
+        // 全ての選択を外す
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
         glDisableVertexAttribArray(0)
         glBindVertexArray(0)
