@@ -5,6 +5,7 @@ import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.title
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.width
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglOptionParser.parse
 import jp.gr.java_conf.hangedman.mmd.renderable_if.Renderable
+import jp.gr.java_conf.hangedman.mmd.renderable_impl.MmdLwjgl
 import org.lwjgl.Version
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWVidMode

@@ -1,9 +1,10 @@
-package jp.gr.java_conf.hangedman.mmd
+package jp.gr.java_conf.hangedman.mmd.renderable_impl
 
 import jp.gr.java_conf.hangedman.lwjgl.ShaderHandler.makeShader
 import jp.gr.java_conf.hangedman.lwjgl.createProjectionMatrix
 import jp.gr.java_conf.hangedman.lwjgl.value
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.width
+import jp.gr.java_conf.hangedman.mmd.VboIndex
 import jp.gr.java_conf.hangedman.mmd.pmd.*
 import jp.gr.java_conf.hangedman.mmd.renderable_if.Renderable
 import jp.gr.java_conf.hangedman.mmd.shader.ModelShader.modelFragmentSource
