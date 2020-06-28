@@ -7,13 +7,13 @@ import jp.gr.java_conf.hangedman.mmd.Main.Companion.cleanup
 import jp.gr.java_conf.hangedman.mmd.Main.Companion.initialize
 import jp.gr.java_conf.hangedman.mmd.Main.Companion.render
 import jp.gr.java_conf.hangedman.mmd.Main.Companion.update
-import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.fragmentSource
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.height
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.title
-import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.vertexSource
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.width
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglOptionParser.parse
 import jp.gr.java_conf.hangedman.mmd.pmd.*
+import jp.gr.java_conf.hangedman.mmd.shader.ModelShader.modelFragmentSource
+import jp.gr.java_conf.hangedman.mmd.shader.ModelShader.modelVertexSource
 import org.joml.Math.cos
 import org.joml.Math.sin
 import org.joml.Matrix4f
@@ -66,9 +66,9 @@ class Main {
         private var indicesCount: Int = 0
 
         // Shader
-        private var shader: Int? = null
-        private var vertShaderObj: Int? = null
-        private var fragShaderObj: Int? = null
+        private var shader: IntArray = IntArray(1)
+        private var vertShaderObj: IntArray = IntArray(shader.size)
+        private var fragShaderObj: IntArray = IntArray(shader.size)
 
         // モデルの位置
         private var position = Vector3f(0f, 0f, 0f)
@@ -80,7 +80,7 @@ class Main {
         private var lastTime = glfwGetTime()
 
         // VAO, VBO, VBOIの読み込み
-        fun loadPolygonData(pmdStruct: PmdStruct) {
+        private fun load(pmdStruct: PmdStruct) {
 
             val verticesBuffer = pmdStruct.verticesBuffer()             // 頂点
             val alphaBuffer = pmdStruct.alphaBuffer()                   // 物体色透過率
@@ -189,11 +189,13 @@ class Main {
             }
 
             // ここから描画情報の読み込み
-            loadPolygonData(pmdStruct)
-            makeShader(vertexSource, fragmentSource).let { (vertShaderObj, fragShaderObj, shader) ->
-                this.vertShaderObj = vertShaderObj
-                this.fragShaderObj = fragShaderObj
-                this.shader = shader
+            load(pmdStruct)
+
+            // 0番目のシェーダーをモデル用に使う
+            makeShader(modelVertexSource, modelFragmentSource).let { (vertShaderObj, fragShaderObj, shader) ->
+                this.vertShaderObj[0] = vertShaderObj
+                this.fragShaderObj[0] = fragShaderObj
+                this.shader[0] = shader
             }
 
             return windowId
@@ -205,13 +207,13 @@ class Main {
 
             // Model行列(描画対象のモデルの座標からOpenGLのワールド座標への相対値)
             // 頂点シェーダーのグローバルGLSL変数"model"に設定
-            val uniModel = glGetUniformLocation(this.shader!!, "model")
+            val uniModel = glGetUniformLocation(this.shader[0], "model")
             // updateメソッドで求めた回転行列をグローバルGLSL変数に設定
             glUniformMatrix4fv(uniModel, false, Matrix4f().value())
 
             // View行列(OpenGLのワールド座標からカメラの座標への相対値)
             // 頂点シェーダーのグローバルGLSL変数"view"に設定
-            val uniView = glGetUniformLocation(this.shader!!, "view")
+            val uniView = glGetUniformLocation(this.shader[0], "view")
             val viewMatrix = Matrix4f().setLookAt(
                     position.x, position.y, position.z,  // ワールド空間でのカメラの位置
                     0f, 0f, 0f, // ワールド空間での見たい位置
@@ -222,17 +224,17 @@ class Main {
             // Projection行列(カメラの座標から、映し出される（射影）ものへの相対値)
             // 頂点シェーダーのグローバルGLSL変数"projection"に設定
             val projectionMatrix = Matrix4f().createProjectionMatrix(fov)
-            val uniProjection = glGetUniformLocation(this.shader!!, "projection")
+            val uniProjection = glGetUniformLocation(this.shader[0], "projection")
             glUniformMatrix4fv(uniProjection, false, projectionMatrix.value())
 
             // 照明の座標
-            val uLightPosition = glGetUniformLocation(this.shader!!, "uLightPosition")
+            val uLightPosition = glGetUniformLocation(this.shader[0], "uLightPosition")
             glUniform3f(uLightPosition, 20f, 20f, -20f)
 
             // エッジの太さ, 色
-            val uEdgeSize = glGetUniformLocation(this.shader!!, "uEdgeSize")
+            val uEdgeSize = glGetUniformLocation(this.shader[0], "uEdgeSize")
             glUniform1f(uEdgeSize, 0.1f)
-            val uEdgeColor = glGetUniformLocation(this.shader!!, "uEdgeColor")
+            val uEdgeColor = glGetUniformLocation(this.shader[0], "uEdgeColor")
             glUniform3f(uEdgeColor, 0f, 0f, 0f)
         }
 
@@ -248,16 +250,15 @@ class Main {
         fun render() {
             glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
-            // Bind to the VAO that has all the information about the vertices
+            // 頂点情報のすべての情報を持つVAOをバインドする
             glBindVertexArray(this.vao)
             glEnableVertexAttribArray(0)
 
-            // Bind to the index VBO that has all the information about the order of the vertices
+            // 頂点情報の並びの情報をすべて持つVBO indexをバインドする
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.vboi)
+            glUseProgram(this.shader[0])
 
-            glUseProgram(this.shader!!)
-
-            // Draw the vertices
+            // 頂点情報を描画する
             glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_SHORT, 0)
 
             // Put everything back to default (deselect)
@@ -273,9 +274,11 @@ class Main {
             }
             glDeleteBuffers(this.vboi)
 
-            glDeleteShader(this.vertShaderObj!!)
-            glDeleteShader(this.fragShaderObj!!)
-            glDeleteProgram(this.shader!!)
+            this.shader.forEachIndexed { index, _ ->
+                glDeleteShader(this.vertShaderObj[index])
+                glDeleteShader(this.fragShaderObj[index])
+                glDeleteProgram(this.shader[index])
+            }
         }
     }
 }
