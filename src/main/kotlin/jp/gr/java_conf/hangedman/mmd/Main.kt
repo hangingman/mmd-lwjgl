@@ -38,7 +38,6 @@ fun main(args: Array<String>) {
 
     while (!glfwWindowShouldClose(windowId)) {
         glfwPollEvents()
-        renderables.forEach { it.update(windowId) }
         renderables.forEach { it.render() }
         glfwSwapBuffers(windowId)
     }

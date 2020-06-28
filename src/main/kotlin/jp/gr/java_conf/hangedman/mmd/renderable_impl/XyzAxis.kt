@@ -73,6 +73,7 @@ class XyzAxis(override val windowId: Long) : Renderable {
         glEnableVertexAttribArray(1)
 
         glBindBuffer(GL_ARRAY_BUFFER, 0)
+        glBindVertexArray(0)
 
         makeShader(axisVertexSource, axisFragmentSource).let { (vertShaderObj, fragShaderObj, shader) ->
             this.vertShaderObj = vertShaderObj
@@ -82,23 +83,27 @@ class XyzAxis(override val windowId: Long) : Renderable {
 
         return this
     }
-    override fun update(windowId: Long) {
 
+    override fun updatePos(windowId: Long) {
     }
+
     override fun render() {
         // 頂点情報のすべての情報を持つVAOをバインドする
         glBindVertexArray(this.vao)
         glEnableVertexAttribArray(0)
 
-        //glUseProgram(this.shader)
+        glUseProgram(this.shader)
+        updatePos(windowId)
 
         glDrawArrays(GL_LINES, 0, 3 * 3)
 
         // 全ての選択を外す
+        glUseProgram(0)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
         glDisableVertexAttribArray(0)
         glBindVertexArray(0)
     }
+
     override fun cleanup() {
         glDeleteVertexArrays(this.vao)
         glDeleteBuffers(this.vbo[0])

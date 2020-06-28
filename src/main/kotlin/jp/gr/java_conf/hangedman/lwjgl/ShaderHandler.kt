@@ -39,7 +39,6 @@ object ShaderHandler {
             val message = glGetProgramInfoLog(shader, glGetProgrami(shader, GL_INFO_LOG_LENGTH))
             throw IllegalStateException("linking shader is invalid\n$message")
         }
-        glUseProgram(shader)
 
         return Triple(vertexShader, fragmentShader, shader)
     }

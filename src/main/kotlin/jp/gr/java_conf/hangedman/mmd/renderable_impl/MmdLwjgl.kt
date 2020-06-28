@@ -139,9 +139,11 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
         return this
     }
 
-    override fun update(windowId: Long) {
+    override fun updatePos(windowId: Long) {
         // キーボードとマウスのインプットからMVP行列を計算する
         computeMatricesFromInputs()
+
+        // glUniform系の関数はglUseProgramを実行している間に呼び出す
 
         // Model行列(描画対象のモデルの座標からOpenGLのワールド座標への相対値)
         // 頂点シェーダーのグローバルGLSL変数"model"に設定
@@ -195,11 +197,14 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
         // 頂点情報の並びの情報をすべて持つVBO indexをバインドする
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.vboi)
         glUseProgram(this.shader)
+        // MVP行列の更新
+        updatePos(windowId)
 
         // 頂点情報を描画する
         glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_SHORT, 0)
 
         // 全ての選択を外す
+        glUseProgram(0)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
         glDisableVertexAttribArray(0)
         glBindVertexArray(0)

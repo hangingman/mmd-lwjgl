@@ -12,6 +12,7 @@ object AxisShader {
         out vec3 vColors;
         
         void main() {
+            vColors = colors;
             gl_Position = vec4(position, 1.0);
         }
     """
