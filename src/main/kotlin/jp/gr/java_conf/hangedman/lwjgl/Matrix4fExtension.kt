@@ -19,15 +19,18 @@ fun Vector3f.value(): FloatBuffer {
     return floatBuffer
 }
 
-fun Matrix4f.createProjectionMatrix(foV: Float): Matrix4f {
+fun getCurrentWH(): Pair<Int, Int> {
     val stack = MemoryStack.stackPush()
     val window = GLFW.glfwGetCurrentContext()
-    val width = stack.mallocInt(1)
-    val height = stack.mallocInt(1)
-    GLFW.glfwGetFramebufferSize(window, width, height)
+    val widthBuffer = stack.mallocInt(1)
+    val heightBuffer = stack.mallocInt(1)
+    GLFW.glfwGetFramebufferSize(window, widthBuffer, heightBuffer)
+    return widthBuffer.get() to heightBuffer.get()
+}
 
-    // projection（投影）の方法は複数ある
-    // とりあえずズームが動いているorthoで
+fun Matrix4f.createProjectionMatrix(foV: Float): Matrix4f {
+
+    // projection（投影）の方法は複数ある, とりあえずズームが動いているorthoで
     return Matrix4f().ortho(
             -foV,
             foV,

@@ -1,15 +1,13 @@
 package jp.gr.java_conf.hangedman.mmd.renderable_impl
 
 import jp.gr.java_conf.hangedman.lwjgl.BufferBuilder.buildFloatBuffer
+import jp.gr.java_conf.hangedman.lwjgl.ModelViewProjection.updateMVP
 import jp.gr.java_conf.hangedman.lwjgl.ShaderHandler.makeShader
-import jp.gr.java_conf.hangedman.lwjgl.createProjectionMatrix
-import jp.gr.java_conf.hangedman.lwjgl.value
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.width
 import jp.gr.java_conf.hangedman.mmd.pmd.PmdStruct
 import jp.gr.java_conf.hangedman.mmd.renderable_if.Renderable
 import jp.gr.java_conf.hangedman.mmd.shader.AxisShader.axisFragmentSource
 import jp.gr.java_conf.hangedman.mmd.shader.AxisShader.axisVertexSource
-import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL
@@ -92,27 +90,7 @@ class XyzAxis(override val windowId: Long) : Renderable {
     }
 
     override fun updatePos(windowId: Long) {
-        // Model行列(描画対象のモデルの座標からOpenGLのワールド座標への相対値)
-        // 頂点シェーダーのグローバルGLSL変数"model"に設定
-        val uniModel = glGetUniformLocation(this.shader, "model")
-        // updateメソッドで求めた回転行列をグローバルGLSL変数に設定
-        glUniformMatrix4fv(uniModel, false, Matrix4f().value())
-
-        // View行列(OpenGLのワールド座標からカメラの座標への相対値)
-        // 頂点シェーダーのグローバルGLSL変数"view"に設定
-        val uniView = glGetUniformLocation(this.shader, "view")
-        val viewMatrix = Matrix4f().setLookAt(
-                position.x, position.y, position.z,  // ワールド空間でのカメラの位置
-                0f, 0f, 0f, // ワールド空間での見たい位置
-                0f, 1f, 0f
-        )
-        glUniformMatrix4fv(uniView, false, viewMatrix.value())
-
-        // Projection行列(カメラの座標から、映し出される（射影）ものへの相対値)
-        // 頂点シェーダーのグローバルGLSL変数"projection"に設定
-        val projectionMatrix = Matrix4f().createProjectionMatrix(50.0f)
-        val uniProjection = glGetUniformLocation(this.shader, "projection")
-        glUniformMatrix4fv(uniProjection, false, projectionMatrix.value())
+        updateMVP(shader, 50f, position)
     }
 
     override fun render() {
