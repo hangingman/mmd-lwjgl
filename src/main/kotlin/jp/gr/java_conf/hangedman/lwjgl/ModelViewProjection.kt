@@ -29,4 +29,19 @@ object ModelViewProjection {
         val uniProjection = glGetUniformLocation(shader, "projection")
         glUniformMatrix4fv(uniProjection, false, projectionMatrix.value())
     }
+
+    fun updateMVP(shader: Int, model: Matrix4f, view: Matrix4f, projection: Matrix4f) {
+
+        // Model行列(描画対象のモデルの座標からOpenGLのワールド座標への相対値)
+        val uniModel = glGetUniformLocation(shader, "model")
+        glUniformMatrix4fv(uniModel, false, model.value())
+
+        // View行列(OpenGLのワールド座標からカメラの座標への相対値)
+        val uniView = glGetUniformLocation(shader, "view")
+        glUniformMatrix4fv(uniView, false, view.value())
+
+        // Projection行列(カメラの座標から、映し出される（射影）ものへの相対値)
+        val uniProjection = glGetUniformLocation(shader, "projection")
+        glUniformMatrix4fv(uniProjection, false, projection.value())
+    }
 }

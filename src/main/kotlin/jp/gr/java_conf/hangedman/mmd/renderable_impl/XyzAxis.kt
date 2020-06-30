@@ -125,4 +125,8 @@ class XyzAxis(override val windowId: Long) : Renderable {
             rotation = (xpos.toFloat() / width - 0.5f) * 2f * Math.PI.toFloat()
         }
     }
+
+    override fun keyCallback(windowId: Long, key: Int, scancode: Int, action: Int, mods: Int) {
+        // NOP
+    }
 }

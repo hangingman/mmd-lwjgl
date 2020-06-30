@@ -83,5 +83,8 @@ fun setCallbacks(windowId: Long, renderables: List<Renderable>) {
     glfwSetCursorPosCallback(windowId) { windowId, xpos, ypos ->
         renderables.forEach { r -> r.cursorPosCallback(windowId, xpos, ypos) }
     }
+    glfwSetKeyCallback(windowId) { windowId, key, scancode, action, mods ->
+        renderables.forEach { r -> r.keyCallback(windowId, key, scancode, action, mods) }
+    }
 }
 

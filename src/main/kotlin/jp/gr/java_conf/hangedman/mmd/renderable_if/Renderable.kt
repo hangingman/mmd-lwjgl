@@ -11,4 +11,5 @@ interface Renderable {
     fun cleanup()
 
     fun cursorPosCallback(windowId: Long, xpos: Double, ypos: Double)
+    fun keyCallback(windowId: Long, key: Int, scancode: Int, action: Int, mods: Int)
 }
