@@ -15,6 +15,7 @@ import jp.gr.java_conf.hangedman.mmd.shader.SimpleShader.simpleVertexSource
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
+import org.lwjgl.glfw.GLFWScrollCallback
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL33.*
 import org.lwjgl.opengl.GLUtil
@@ -52,7 +53,8 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
     private var inactive = 1
     private var rotate = 0.0f
     private var rotation = floatArrayOf(0.0f, 0.0f)
-    private var center = Vector3f(0f, 0f, 0f)
+    private var modelCenter = Vector3f(0f, 0f, 0f)
+    private var focalLength = 15f  // 焦点距離
 
     // VAO, VBO, VBOIの読み込み
     private fun load(pmdStruct: PmdStruct?) {
@@ -70,7 +72,7 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
         // カメラの視点のためPMDモデルの中心を計算する(0, Ymax + Ymin / 2, 0)
         val modelYMax = pmdStruct.vertex!!.map{ v -> v.pos[1] }.max()!!
         val modelYMin = pmdStruct.vertex!!.map{ v -> v.pos[1] }.min()!!
-        center = Vector3f(0f, (modelYMax + modelYMin)/2, 0f)
+        modelCenter = Vector3f(0f, (modelYMax + modelYMin)/2, 0f)
 
         val (indicesCount, indicesBuffer) = pmdStruct.faceVertPair()  // 面頂点
         this.indicesCount = indicesCount
@@ -128,6 +130,12 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
         glEnable(GL_CULL_FACE)   // 視点に対して裏を向いている面を表示しないようにする
         glCullFace(GL_BACK)
 
+        glfwSetScrollCallback(windowId, object : GLFWScrollCallback() {
+            override fun invoke(windowId: Long, xoffset: Double, yoffset: Double) {
+                focalLength -= yoffset.toFloat()
+            }
+        })
+
         // ここから描画情報の読み込み
         load(pmdStruct)
 
@@ -169,8 +177,8 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
 
         // Setup both camera's view matrices
         viewMatrix[0].setLookAt(
-                0f, center.y, 25f,
-                center.x, center.y, center.z,
+                0f, modelCenter.y, -focalLength,
+                modelCenter.x, modelCenter.y, modelCenter.z,
                 0f, 1f, 0f)
                 .rotateY(rotation[0])
         viewMatrix[1].setLookAt(
@@ -180,7 +188,7 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
                 .rotateY(rotation[1])
 
         // Apply model transformation to active camera's view
-        modelMatrix.rotationY(angle * Math.toRadians(10.0).toFloat())
+        //modelMatrix.rotationY(angle * Math.toRadians(10.0).toFloat())
         updateMVP(shader, modelMatrix, viewMatrix[active], projMatrix[active])
 
         // 照明の座標
