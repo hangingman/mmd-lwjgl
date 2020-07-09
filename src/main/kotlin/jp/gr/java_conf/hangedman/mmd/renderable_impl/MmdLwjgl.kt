@@ -3,6 +3,7 @@ package jp.gr.java_conf.hangedman.mmd.renderable_impl
 import jp.gr.java_conf.hangedman.lwjgl.BufferBuilder.buildFloatBuffer
 import jp.gr.java_conf.hangedman.lwjgl.ModelViewProjection.updateMVP
 import jp.gr.java_conf.hangedman.lwjgl.ShaderHandler.makeShader
+import jp.gr.java_conf.hangedman.lwjgl.getCurrentWH
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.height
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.width
 import jp.gr.java_conf.hangedman.mmd.VboIndex
@@ -20,6 +21,7 @@ import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL33.*
 import org.lwjgl.opengl.GLUtil
 import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J
+import kotlin.math.atan
 
 class MmdLwjgl(override val windowId: Long) : Renderable {
 
@@ -49,12 +51,15 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
     // カメラ
     private var firstTime: Long = System.nanoTime()
     private var lastTime: Long = firstTime
-    private var active = 0
-    private var inactive = 1
+    private var rotationY = 0
+    private var rotationX = 1
     private var rotate = 0.0f
+    private var cameraRotate = floatArrayOf(0.0f, 0.0f)
     private var rotation = floatArrayOf(0.0f, 0.0f)
     private var modelCenter = Vector3f(0f, 0f, 0f)
     private var focalLength = 15f  // 焦点距離
+    private var previousXpos = 0.0
+    private var previousYpos = 0.0
 
     // VAO, VBO, VBOIの読み込み
     private fun load(pmdStruct: PmdStruct?) {
@@ -169,27 +174,30 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
         lastTime = thisTime
 
         // Process rotation
-        rotation[inactive] += rotate * delta
+        rotation[rotationY] += cameraRotate[rotationY] * delta
+        rotation[rotationX] += cameraRotate[rotationX] * delta
 
         // Setup both camera's projection matrices
         projMatrix[0].setPerspective(Math.toRadians(40.0).toFloat(), (width/height).toFloat(), 0.1f, 100.0f)
-        projMatrix[1].setPerspective(Math.toRadians(30.0).toFloat(), (width/height).toFloat(), 2.0f, 5.0f)
+        //projMatrix[1].setPerspective(Math.toRadians(30.0).toFloat(), (width/height).toFloat(), 2.0f, 5.0f)
 
         // Setup both camera's view matrices
-        viewMatrix[0].setLookAt(
-                0f, modelCenter.y, -focalLength,
-                modelCenter.x, modelCenter.y, modelCenter.z,
-                0f, 1f, 0f)
-                .rotateY(rotation[0])
-        viewMatrix[1].setLookAt(
-                3f, 1f, 1f,
-                0f, 0f, 0f,
-                0f, 1f, 0f)
-                .rotateY(rotation[1])
+        val recenter = Matrix4f().translate(modelCenter.mul(-1.0f)) //not needed if world origin
+        val rotation = Matrix4f().rotateY(rotation[rotationY]) //can be replaced by glm::eulerAngleZXY(yaw, pitch, roll) ...
+        val moveBack = Matrix4f().translate(modelCenter) //not needed if world origin
+
+        val transfer = moveBack.mul(rotation).mul(recenter) //order from right to left
+        //val transfer = recenter.mul(rotation).mul(moveBack) //order from right to left
+
+        val eye = Vector3f(0f, modelCenter.y, -focalLength).mulProject(transfer)
+        val up = Vector3f(0f, 1f, 0f).mulProject(transfer)
+        viewMatrix[0].setLookAt(eye, modelCenter, up)
+
+        println("eye: $eye, center: $modelCenter, up: $up")
 
         // Apply model transformation to active camera's view
         //modelMatrix.rotationY(angle * Math.toRadians(10.0).toFloat())
-        updateMVP(shader, modelMatrix, viewMatrix[active], projMatrix[active])
+        updateMVP(shader, modelMatrix, viewMatrix[0], projMatrix[0])
 
         // 照明の座標
         val uLightPosition = glGetUniformLocation(shader, "uLightPosition")
@@ -202,11 +210,6 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
     }
 
     private fun computeMatricesFromInputs() {
-
-        val currentTime = glfwGetTime()
-        //val deltaTime = (currentTime - lastTime).toFloat()
-        //lastTime = currentTime
-        //position.set(-1f * cos(rotation), 0f, -5.0f * sin(rotation))
     }
 
     override fun render() {
@@ -245,23 +248,26 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
         glDeleteShader(this.vertShaderObj)
         glDeleteShader(this.fragShaderObj)
         glDeleteProgram(this.shader)
-
-        // camera用
-        /**
-        glDeleteVertexArrays(this.vaoCamera)
-        glDeleteBuffers(this.vboCamera[0])
-        glDeleteBuffers(this.vboCamera[1])
-        glDeleteShader(this.vertShaderObjCamera)
-        glDeleteShader(this.fragShaderObjCamera)
-        glDeleteProgram(this.shaderCamera)
-        */
     }
 
     override fun cursorPosCallback(windowId: Long, xpos: Double, ypos: Double) {
-//        if (glfwGetMouseButton(windowId, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-//            // 右クリックしている場合にモデルを動かす
-//            rotation = (xpos.toFloat() / width - 0.5f) * 2f * Math.PI.toFloat()
-//        }
+        val (width, _) = getCurrentWH()
+
+        val (xposDelta, yposDelta) = if (glfwGetMouseButton(windowId, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+            // 右クリックしている場合にモデルを動かす
+            previousXpos - xpos to previousYpos - ypos
+        } else {
+            0.0 to 0.0
+        }
+        previousXpos = xpos
+        previousYpos = ypos
+
+        val angleX = atan(xposDelta / focalLength.toDouble()).toFloat()
+        val angleY = atan(yposDelta / focalLength.toDouble()).toFloat()
+
+        println("angle = $angleX, $angleY")
+        cameraRotate[rotationY] = angleX * 20.0f
+        cameraRotate[rotationX] = angleY * 20.0f
     }
 
     override fun keyCallback(windowId: Long, key: Int, scancode: Int, action: Int, mods: Int) {
@@ -281,12 +287,12 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
     }
 
     private fun switchCamera() {
-        active = 1 - active
-        inactive = 1 - inactive
+        //active = 1 - active
+        //inactive = 1 - inactive
     }
 
     private fun renderFrustum() {
-        val m = Matrix4f().set(projMatrix[inactive]).mul(viewMatrix[inactive])
+        val m = Matrix4f().set(projMatrix[rotationX]).mul(viewMatrix[rotationX])
         val vertices = mutableListOf<Float>()
         val colors = mutableListOf<Float>()
 
