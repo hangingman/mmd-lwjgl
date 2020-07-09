@@ -6,13 +6,13 @@ import jp.gr.java_conf.hangedman.lwjgl.orbitBy
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.height
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.width
 import jp.gr.java_conf.hangedman.mmd.VboIndex
-import jp.gr.java_conf.hangedman.mmd.pmd.*
+import jp.gr.java_conf.hangedman.mmd.mesh_if.Mesh
+import jp.gr.java_conf.hangedman.mmd.pmd.PmdStruct
 import jp.gr.java_conf.hangedman.mmd.renderable_if.RenderableBase
 import jp.gr.java_conf.hangedman.mmd.shader.ModelShader.modelFragmentSource
 import jp.gr.java_conf.hangedman.mmd.shader.ModelShader.modelVertexSource
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
-import org.lwjgl.glfw.GLFWScrollCallback
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL33.*
 import org.lwjgl.opengl.GLUtil
@@ -27,7 +27,7 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
     private var indicesCount: Int = 0
 
     // VAO, VBO, VBOIの読み込み
-    private fun load(pmdStruct: PmdStruct?) {
+    private fun load(pmdStruct: Mesh?) {
 
         requireNotNull(pmdStruct)
         val verticesBuffer = pmdStruct.verticesBuffer()             // 頂点
@@ -40,8 +40,8 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
         val edgeFlagBuffer = pmdStruct.edgeFlagBuffer()             // エッジの有無
 
         // カメラの視点のためPMDモデルの中心を計算する(0, Ymax + Ymin / 2, 0)
-        val modelYMax = pmdStruct.vertex!!.map{ v -> v.pos[1] }.max()!!
-        val modelYMin = pmdStruct.vertex!!.map{ v -> v.pos[1] }.min()!!
+        val modelYMax = pmdStruct.getModelYMax()
+        val modelYMin = pmdStruct.getModelYMin()
         modelCenter = Vector3f(0f, (modelYMax + modelYMin) / 2, 0f)
 
         val (indicesCount, indicesBuffer) = pmdStruct.faceVertPair()  // 面頂点
