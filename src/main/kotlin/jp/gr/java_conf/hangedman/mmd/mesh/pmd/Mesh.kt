@@ -1,4 +1,4 @@
-package jp.gr.java_conf.hangedman.mmd.pmd
+package jp.gr.java_conf.hangedman.mmd.mesh.pmd
 
 import com.igormaznitsa.jbbp.mapper.Bin
 import jp.gr.java_conf.hangedman.lwjgl.BufferBuilder.buildFloatBuffer
@@ -29,7 +29,7 @@ class Material {
 }
 
 @Bin
-class PmdStruct : Mesh {
+class Mesh : Mesh {
 
     // ヘッダ
     @Bin(order = 1)

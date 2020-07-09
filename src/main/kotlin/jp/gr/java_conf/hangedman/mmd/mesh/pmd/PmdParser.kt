@@ -1,4 +1,4 @@
-package jp.gr.java_conf.hangedman.mmd.pmd
+package jp.gr.java_conf.hangedman.mmd.mesh.pmd
 
 import com.igormaznitsa.jbbp.JBBPParser
 import com.igormaznitsa.jbbp.mapper.JBBPMapper.FLAG_IGNORE_MISSING_VALUES
@@ -43,9 +43,9 @@ object PmdParser {
         }
     """.trimIndent())
 
-    fun parse(stream: InputStream): PmdStruct {
+    fun parse(stream: InputStream): Mesh {
         return pmdParser
                 .parse(stream) // Struct内部にデータ型以外のものも設定したいのでフラグをセット
-                .mapTo(PmdStruct(), FLAG_IGNORE_MISSING_VALUES)
+                .mapTo(Mesh(), FLAG_IGNORE_MISSING_VALUES)
     }
 }

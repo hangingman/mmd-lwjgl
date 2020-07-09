@@ -3,15 +3,15 @@ package jp.gr.java_conf.hangedman.mmd
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 
-class PmdLoaderTest {
+class MeshLoaderTest {
 
     @Test
     fun testLoadPmdFile() {
-        PmdLoader.loadPmdFile("HatsuneMiku.pmd")
+        MeshLoader.loadMeshFile("HatsuneMiku.pmd")
     }
 
     @Test
     fun testGetResourceAsStream() {
-        assertNotNull(PmdLoader.getResourceAsStream("HatsuneMiku.pmd"))
+        assertNotNull(MeshLoader.getResourceAsStream("HatsuneMiku.pmd"))
     }
 }

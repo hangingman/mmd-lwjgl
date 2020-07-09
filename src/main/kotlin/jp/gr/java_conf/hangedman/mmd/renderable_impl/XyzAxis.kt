@@ -6,7 +6,7 @@ import jp.gr.java_conf.hangedman.lwjgl.ShaderHandler.makeShader
 import jp.gr.java_conf.hangedman.lwjgl.orbitBy
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.height
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.width
-import jp.gr.java_conf.hangedman.mmd.pmd.PmdStruct
+import jp.gr.java_conf.hangedman.mmd.mesh_if.Mesh
 import jp.gr.java_conf.hangedman.mmd.renderable_if.Renderable
 import jp.gr.java_conf.hangedman.mmd.renderable_if.RenderableBase
 import jp.gr.java_conf.hangedman.mmd.shader.AxisShader.axisFragmentSource
@@ -30,7 +30,7 @@ class XyzAxis(override val windowId: Long) : RenderableBase(windowId) {
     private var position = Vector3f(0f, 0f, 0f)
     private val axisSize = 5.0f
 
-    override fun initialize(pmdStruct: PmdStruct?): Renderable {
+    override fun initialize(mesh: Mesh?): Renderable {
         // コンテキストの作成
         glfwMakeContextCurrent(windowId)
         glfwSwapInterval(1)

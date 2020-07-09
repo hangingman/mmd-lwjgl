@@ -7,7 +7,6 @@ import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.height
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.width
 import jp.gr.java_conf.hangedman.mmd.VboIndex
 import jp.gr.java_conf.hangedman.mmd.mesh_if.Mesh
-import jp.gr.java_conf.hangedman.mmd.pmd.PmdStruct
 import jp.gr.java_conf.hangedman.mmd.renderable_if.RenderableBase
 import jp.gr.java_conf.hangedman.mmd.shader.ModelShader.modelFragmentSource
 import jp.gr.java_conf.hangedman.mmd.shader.ModelShader.modelVertexSource
@@ -27,24 +26,24 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
     private var indicesCount: Int = 0
 
     // VAO, VBO, VBOIの読み込み
-    private fun load(pmdStruct: Mesh?) {
+    private fun load(mesh: jp.gr.java_conf.hangedman.mmd.mesh_if.Mesh?) {
 
-        requireNotNull(pmdStruct)
-        val verticesBuffer = pmdStruct.verticesBuffer()             // 頂点
-        val alphaBuffer = pmdStruct.alphaBuffer()                   // 物体色透過率
-        val diffuseColorsBuffer = pmdStruct.diffuseColorsBuffer()   // 物体色
-        val ambientColorsBuffer = pmdStruct.ambientColorsBuffer()   // 環境色
-        val specularColorsBuffer = pmdStruct.specularColorsBuffer() // 光沢色
-        val normalsBuffer = pmdStruct.normalsBuffer()               // 法線
-        val shininessBuffer = pmdStruct.shininessBuffer()           // 光沢度
-        val edgeFlagBuffer = pmdStruct.edgeFlagBuffer()             // エッジの有無
+        requireNotNull(mesh)
+        val verticesBuffer = mesh.verticesBuffer()             // 頂点
+        val alphaBuffer = mesh.alphaBuffer()                   // 物体色透過率
+        val diffuseColorsBuffer = mesh.diffuseColorsBuffer()   // 物体色
+        val ambientColorsBuffer = mesh.ambientColorsBuffer()   // 環境色
+        val specularColorsBuffer = mesh.specularColorsBuffer() // 光沢色
+        val normalsBuffer = mesh.normalsBuffer()               // 法線
+        val shininessBuffer = mesh.shininessBuffer()           // 光沢度
+        val edgeFlagBuffer = mesh.edgeFlagBuffer()             // エッジの有無
 
         // カメラの視点のためPMDモデルの中心を計算する(0, Ymax + Ymin / 2, 0)
-        val modelYMax = pmdStruct.getModelYMax()
-        val modelYMin = pmdStruct.getModelYMin()
+        val modelYMax = mesh.getModelYMax()
+        val modelYMin = mesh.getModelYMin()
         modelCenter = Vector3f(0f, (modelYMax + modelYMin) / 2, 0f)
 
-        val (indicesCount, indicesBuffer) = pmdStruct.faceVertPair()  // 面頂点
+        val (indicesCount, indicesBuffer) = mesh.faceVertPair()  // 面頂点
         this.indicesCount = indicesCount
 
         // Vertex Array Objectをメモリ上に作成し選択する(バインド)
@@ -81,7 +80,7 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
     }
 
     // 初期化してシェーダーを返す
-    override fun initialize(pmdStruct: PmdStruct?): MmdLwjgl {
+    override fun initialize(mesh: Mesh?): MmdLwjgl {
         // コンテキストの作成
         glfwMakeContextCurrent(windowId)
         glfwSwapInterval(1)
@@ -101,7 +100,7 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
         glCullFace(GL_BACK)
 
         // ここから描画情報の読み込み
-        load(pmdStruct)
+        load(mesh)
 
         makeShader(modelVertexSource, modelFragmentSource).let { (vertShaderObj, fragShaderObj, shader) ->
             this.vertShaderObj = vertShaderObj

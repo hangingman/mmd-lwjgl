@@ -30,7 +30,7 @@ fun main(args: Array<String>) {
     val windowId = initWindow()
 
     val modelPath = if (cmd.hasOption("m")) cmd.getOptionValue("m") else "HatsuneMiku.pmd"
-    val pmdStruct = PmdLoader.loadPmdFile(modelPath)
+    val pmdStruct = MeshLoader.loadMeshFile(modelPath)
 
     // 複数のメッシュを描画する
     val renderables = listOf(

@@ -1,6 +1,6 @@
 package jp.gr.java_conf.hangedman.mmd.renderable_if
 
-import jp.gr.java_conf.hangedman.mmd.pmd.PmdStruct
+import jp.gr.java_conf.hangedman.mmd.mesh_if.Mesh
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
@@ -30,7 +30,7 @@ open class RenderableBase(override val windowId: Long) : Renderable {
     val viewMatrix = Matrix4f()
     val modelMatrix = Matrix4f()
 
-    override fun initialize(pmdStruct: PmdStruct?): Renderable { return this }
+    override fun initialize(mesh: Mesh?): Renderable { return this }
     override fun render() {}
     override fun updatePos(windowId: Long) {}
     override fun cleanup() {}

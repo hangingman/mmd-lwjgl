@@ -1,11 +1,11 @@
 package jp.gr.java_conf.hangedman.mmd.renderable_if
 
-import jp.gr.java_conf.hangedman.mmd.pmd.PmdStruct
+import jp.gr.java_conf.hangedman.mmd.mesh_if.Mesh
 
 interface Renderable {
     val windowId: Long
 
-    fun initialize(pmdStruct: PmdStruct? = null): Renderable
+    fun initialize(mesh: Mesh? = null): Renderable
     fun render()
     fun updatePos(windowId: Long)
     fun cleanup()

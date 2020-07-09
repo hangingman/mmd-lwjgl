@@ -1,7 +1,7 @@
-package jp.gr.java_conf.hangedman.mmd.pmd
+package jp.gr.java_conf.hangedman.mmd.mesh.pmd
 
 import com.github.doyaaaaaken.kotlincsv.dsl.csvReader
-import jp.gr.java_conf.hangedman.mmd.PmdLoader
+import jp.gr.java_conf.hangedman.mmd.MeshLoader
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Assertions.assertArrayEquals
@@ -11,23 +11,23 @@ import org.junit.jupiter.api.Test
 
 class PmdParserTest {
 
-    private lateinit var pmdStruct: PmdStruct
+    private lateinit var mesh: Mesh
 
     @BeforeEach
     fun beforeEach() {
-        val stream = PmdLoader.getResourceAsStream("HatsuneMiku.pmd")
-        pmdStruct = PmdParser.parse(stream)
+        val stream = MeshLoader.getResourceAsStream("HatsuneMiku.pmd")
+        mesh = PmdParser.parse(stream)
     }
 
     @Test
     fun testParseHeader() {
         // ヘッダー
-        assertArrayEquals("Pmd".toByteArray(), pmdStruct.magic)
-        assertEquals("1.00".toFloat(), pmdStruct.version)
-        assertThat(pmdStruct.modelName!!.toString(charset = charset("Shift_JIS")),
+        assertArrayEquals("Pmd".toByteArray(), mesh.magic)
+        assertEquals("1.00".toFloat(), mesh.version)
+        assertThat(mesh.modelName!!.toString(charset = charset("Shift_JIS")),
                 allOf(notNullValue(), startsWith("初音ミク"))
         )
-        assertThat(pmdStruct.comment!!.toString(charset = charset("Shift_JIS")),
+        assertThat(mesh.comment!!.toString(charset = charset("Shift_JIS")),
                 allOf(notNullValue(), startsWith("PolyMo用モデルデータ：初音ミク ver.1.3"))
         )
     }
@@ -36,7 +36,7 @@ class PmdParserTest {
     fun testParseVertex() {
 
         // 頂点リスト
-        assertEquals(9036, pmdStruct.vertCount)
+        assertEquals(9036, mesh.vertCount)
 
         val stream = this::class.java.classLoader.getResourceAsStream("vertex.csv")
         requireNotNull(stream)
@@ -57,7 +57,7 @@ class PmdParserTest {
             val weight = e["boneWeight"]?.toByte() ?: throw IllegalStateException()
             val edge = e["edgeFlag"]?.toByte() ?: throw IllegalStateException()
 
-            pmdStruct.vertex.run {
+            mesh.vertex.run {
                 this!![index].run {
                     requireNotNull(this)
                     assertArrayEquals(floatArrayOf(x, y, z), this.pos)
@@ -74,7 +74,7 @@ class PmdParserTest {
     @Test
     fun testParseFaceVert() {
         // 面頂点リスト
-        assertEquals(44991, pmdStruct.faceVertCount)
+        assertEquals(44991, mesh.faceVertCount)
 
         val stream = this::class.java.classLoader.getResourceAsStream("face_vertex.csv")
         requireNotNull(stream)
@@ -86,16 +86,16 @@ class PmdParserTest {
             val faceVert2 = e["faceVert2"]?.toShort() ?: throw IllegalStateException()
             val faceVert3 = e["faceVert3"]?.toShort() ?: throw IllegalStateException()
 
-            assertEquals(faceVert1, this.pmdStruct.faceVertIndex?.get(3 * index))
-            assertEquals(faceVert2, this.pmdStruct.faceVertIndex?.get(3 * index + 1))
-            assertEquals(faceVert3, this.pmdStruct.faceVertIndex?.get(3 * index + 2))
+            assertEquals(faceVert1, this.mesh.faceVertIndex?.get(3 * index))
+            assertEquals(faceVert2, this.mesh.faceVertIndex?.get(3 * index + 1))
+            assertEquals(faceVert3, this.mesh.faceVertIndex?.get(3 * index + 2))
         }
     }
 
     @Test
     fun testMaterial() {
         // 材質リスト
-        assertEquals(17, pmdStruct.materialCount)
+        assertEquals(17, mesh.materialCount)
 
         val stream = this::class.java.classLoader.getResourceAsStream("material.csv")
         requireNotNull(stream)
@@ -119,14 +119,14 @@ class PmdParserTest {
             val faceVertCount = e["faceVertCount"]?.toInt() ?: throw IllegalStateException()
             val textureFileName: ByteArray = e["textureFileName"]?.toByteArray() ?: throw IllegalStateException()
 
-            assertArrayEquals(floatArrayOf(dr, dg, db), pmdStruct.material!![index].diffuseColor)
-            assertEquals(alpha, pmdStruct.material!![index].alpha)
-            assertEquals(specularity, pmdStruct.material!![index].specularity)
-            assertArrayEquals(floatArrayOf(sr, sg, sb), pmdStruct.material!![index].specularColor)
-            assertArrayEquals(floatArrayOf(mr, mg, mb), pmdStruct.material!![index].ambientColor)
-            assertEquals(toonIndex, pmdStruct.material!![index].toonIndex)
-            assertEquals(edgeFlag, pmdStruct.material!![index].edgeFlag)
-            assertEquals(faceVertCount, pmdStruct.material!![index].faceVertCount)
+            assertArrayEquals(floatArrayOf(dr, dg, db), mesh.material!![index].diffuseColor)
+            assertEquals(alpha, mesh.material!![index].alpha)
+            assertEquals(specularity, mesh.material!![index].specularity)
+            assertArrayEquals(floatArrayOf(sr, sg, sb), mesh.material!![index].specularColor)
+            assertArrayEquals(floatArrayOf(mr, mg, mb), mesh.material!![index].ambientColor)
+            assertEquals(toonIndex, mesh.material!![index].toonIndex)
+            assertEquals(edgeFlag, mesh.material!![index].edgeFlag)
+            assertEquals(faceVertCount, mesh.material!![index].faceVertCount)
             //assertEquals(textureFileName, pmdStruct.material!![index].textureFileName)
         }
 
