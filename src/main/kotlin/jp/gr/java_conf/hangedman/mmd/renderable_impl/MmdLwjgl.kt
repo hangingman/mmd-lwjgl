@@ -1,20 +1,15 @@
 package jp.gr.java_conf.hangedman.mmd.renderable_impl
 
-import jp.gr.java_conf.hangedman.lwjgl.BufferBuilder.buildFloatBuffer
 import jp.gr.java_conf.hangedman.lwjgl.ModelViewProjection.updateMVP
 import jp.gr.java_conf.hangedman.lwjgl.ShaderHandler.makeShader
-import jp.gr.java_conf.hangedman.lwjgl.getCurrentWH
 import jp.gr.java_conf.hangedman.lwjgl.orbitBy
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.height
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.width
 import jp.gr.java_conf.hangedman.mmd.VboIndex
 import jp.gr.java_conf.hangedman.mmd.pmd.*
-import jp.gr.java_conf.hangedman.mmd.renderable_if.Renderable
+import jp.gr.java_conf.hangedman.mmd.renderable_if.RenderableBase
 import jp.gr.java_conf.hangedman.mmd.shader.ModelShader.modelFragmentSource
 import jp.gr.java_conf.hangedman.mmd.shader.ModelShader.modelVertexSource
-import jp.gr.java_conf.hangedman.mmd.shader.SimpleShader.simpleFragmentSource
-import jp.gr.java_conf.hangedman.mmd.shader.SimpleShader.simpleVertexSource
-import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWScrollCallback
@@ -22,45 +17,14 @@ import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL33.*
 import org.lwjgl.opengl.GLUtil
 import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J
-import kotlin.math.atan
 
-class MmdLwjgl(override val windowId: Long) : Renderable {
+class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
 
     // VAO, VBO, VBOI
     private var vao: Int = 0
     private var vbo: IntArray = IntArray(VboIndex.values().size)
     private var vboi: Int = 0
     private var indicesCount: Int = 0
-
-    // Shader(Model)
-    private var shader: Int = 0
-    private var vertShaderObj: Int = 0
-    private var fragShaderObj: Int = 0
-
-    // Shader(Camera)
-    private var vaoCamera: Int = 0
-    private var vboCamera: IntArray = IntArray(2)
-    private var shaderCamera: Int = 0
-    private var vertShaderObjCamera: Int = 0
-    private var fragShaderObjCamera: Int = 0
-
-    // Model, View, Projection
-    private val projMatrix = arrayOf(Matrix4f(), Matrix4f())
-    private val viewMatrix = arrayOf(Matrix4f(), Matrix4f())
-    private val modelMatrix = Matrix4f()
-
-    // カメラ
-    private var firstTime: Long = System.nanoTime()
-    private var lastTime: Long = firstTime
-    private var rotationY = 0
-    private var rotationX = 1
-    private var rotate = 0.0f
-    private var cameraRotate = floatArrayOf(0.0f, 0.0f)
-    private var rotation = floatArrayOf(0.0f, 0.0f)
-    private var modelCenter = Vector3f(0f, 0f, 0f)
-    private var focalLength = 15f  // 焦点距離
-    private var previousXpos = 0.0
-    private var previousYpos = 0.0
 
     // VAO, VBO, VBOIの読み込み
     private fun load(pmdStruct: PmdStruct?) {
@@ -78,7 +42,7 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
         // カメラの視点のためPMDモデルの中心を計算する(0, Ymax + Ymin / 2, 0)
         val modelYMax = pmdStruct.vertex!!.map{ v -> v.pos[1] }.max()!!
         val modelYMin = pmdStruct.vertex!!.map{ v -> v.pos[1] }.min()!!
-        modelCenter = Vector3f(0f, (modelYMax + modelYMin)/2, 0f)
+        modelCenter = Vector3f(0f, (modelYMax + modelYMin) / 2, 0f)
 
         val (indicesCount, indicesBuffer) = pmdStruct.faceVertPair()  // 面頂点
         this.indicesCount = indicesCount
@@ -136,12 +100,6 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
         glEnable(GL_CULL_FACE)   // 視点に対して裏を向いている面を表示しないようにする
         glCullFace(GL_BACK)
 
-        glfwSetScrollCallback(windowId, object : GLFWScrollCallback() {
-            override fun invoke(windowId: Long, xoffset: Double, yoffset: Double) {
-                focalLength -= yoffset.toFloat()
-            }
-        })
-
         // ここから描画情報の読み込み
         load(pmdStruct)
 
@@ -151,26 +109,12 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
             this.shader = shader
         }
 
-        //initFrustum()
-
         return this
     }
 
-    private fun initFrustum() {
-        makeShader(simpleVertexSource, simpleFragmentSource).let { (vertShaderObj, fragShaderObj, shader) ->
-            this.vertShaderObjCamera = vertShaderObj
-            this.fragShaderObjCamera = fragShaderObj
-            this.shaderCamera = shader
-        }
-    }
-
     override fun updatePos(windowId: Long) {
-        // キーボードとマウスのインプットからMVP行列を計算する
-        computeMatricesFromInputs()
-
         // glUniform系の関数はglUseProgramを実行している間に呼び出す
         val thisTime = System.nanoTime()
-        val angle = (thisTime - firstTime) / 1E9f
         val delta = (thisTime - lastTime) / 1E9f
         lastTime = thisTime
 
@@ -179,14 +123,9 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
         rotation[rotationX] += cameraRotate[rotationX] * delta
 
         // Setup both camera's projection matrices
-        projMatrix[0].setPerspective(Math.toRadians(40.0).toFloat(), (width/height).toFloat(), 0.1f, 100.0f)
-        //projMatrix[1].setPerspective(Math.toRadians(30.0).toFloat(), (width/height).toFloat(), 2.0f, 5.0f)
-        //orbitBy(modelCenter, viewMatrix[0])
-        viewMatrix[0].orbitBy(modelCenter, rotation[rotationY], rotation[rotationX], focalLength)
-
-        // Apply model transformation to active camera's view
-        //modelMatrix.rotationY(angle * Math.toRadians(10.0).toFloat())
-        updateMVP(shader, modelMatrix, viewMatrix[0], projMatrix[0])
+        projMatrix.setPerspective(Math.toRadians(40.0).toFloat(), (width/height).toFloat(), 0.1f, 100.0f)
+        viewMatrix.orbitBy(modelCenter, rotation[rotationY], rotation[rotationX], focalLength)
+        updateMVP(shader, modelMatrix, viewMatrix, projMatrix)
 
         // 照明の座標
         val uLightPosition = glGetUniformLocation(shader, "uLightPosition")
@@ -196,9 +135,6 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
         glUniform1f(uEdgeSize, 0.1f)
         val uEdgeColor = glGetUniformLocation(shader, "uEdgeColor")
         glUniform3f(uEdgeColor, 0f, 0f, 0f)
-    }
-
-    private fun computeMatricesFromInputs() {
     }
 
     override fun render() {
@@ -223,8 +159,6 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
         glDisableVertexAttribArray(0)
         glBindVertexArray(0)
-
-        //renderFrustum()
     }
 
     override fun cleanup() {
@@ -239,120 +173,8 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
         glDeleteProgram(this.shader)
     }
 
-    override fun cursorPosCallback(windowId: Long, xpos: Double, ypos: Double) {
-        val (width, _) = getCurrentWH()
-
-        val (xposDelta, yposDelta) = if (glfwGetMouseButton(windowId, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-            // 右クリックしている場合にモデルを動かす
-            previousXpos - xpos to previousYpos - ypos
-        } else {
-            0.0 to 0.0
-        }
-        previousXpos = xpos
-        previousYpos = ypos
-
-        val angleX = atan(xposDelta / focalLength.toDouble()).toFloat()
-        val angleY = atan(yposDelta / focalLength.toDouble()).toFloat()
-
-        println("angle = $angleX, $angleY")
-        cameraRotate[rotationY] = angleX * 20.0f
-        cameraRotate[rotationX] = -angleY * 20.0f
-    }
-
     override fun keyCallback(windowId: Long, key: Int, scancode: Int, action: Int, mods: Int) {
         if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE)
             glfwSetWindowShouldClose(windowId, true)
-        if (key == GLFW_KEY_C && action == GLFW_RELEASE)
-            switchCamera()
-        if (key == GLFW_KEY_LEFT && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-            rotate = 1.0f
-        } else if (key == GLFW_KEY_LEFT && (action == GLFW_RELEASE)) {
-            rotate = 0.0f
-        } else if (key == GLFW_KEY_RIGHT && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-            rotate = -1.0f
-        } else if (key == GLFW_KEY_RIGHT && (action == GLFW_RELEASE)) {
-            rotate = 0.0f
-        }
-    }
-
-    private fun switchCamera() {
-        //active = 1 - active
-        //inactive = 1 - inactive
-    }
-
-    private fun renderFrustum() {
-        val m = Matrix4f().set(projMatrix[rotationX]).mul(viewMatrix[rotationX])
-        val vertices = mutableListOf<Float>()
-        val colors = mutableListOf<Float>()
-
-        // Perspective origin to near plane
-        val v = Vector3f()
-
-        for (i in 0 until 4) {
-            m.perspectiveOrigin(v)
-            vertices.addAll(listOf(v.x, v.y, v.z))
-            colors.addAll(listOf(0.2f, 0.2f, 0.2f))
-            m.frustumCorner(i, v)
-            vertices.addAll(listOf(v.x, v.y, v.z))
-            colors.addAll(listOf(0.2f, 0.2f, 0.2f))
-        }
-        // Near plane
-        for (i in 0 until 4+1) {
-            m.frustumCorner(i and 3, v)
-            vertices.addAll(listOf(v.x, v.y, v.z))
-            colors.addAll(listOf(0.8f, 0.2f, 0.2f))
-        }
-        // Edges
-        for (i in 0 until 4) {
-            m.frustumCorner(3 - i, v)
-            vertices.addAll(listOf(v.x, v.y, v.z))
-            colors.addAll(listOf(0.0f, 0.0f, 0.0f))
-            m.frustumCorner(4 + ((i + 2) and 3), v)
-            vertices.addAll(listOf(v.x, v.y, v.z))
-            colors.addAll(listOf(0.0f, 0.0f, 0.0f))
-        }
-        // Far plane
-        for (i in 0 until 4+1) {
-            m.frustumCorner(4 + (i and 3), v)
-            vertices.addAll(listOf(v.x, v.y, v.z))
-            colors.addAll(listOf(0.0f, 0.0f, 0.0f))
-        }
-
-        val verticesBuffer = buildFloatBuffer(vertices.toFloatArray())
-        val colorsBuffer = buildFloatBuffer(colors.toFloatArray())
-
-        this.vaoCamera = glGenVertexArrays()
-        glBindVertexArray(this.vaoCamera)
-
-        this.vboCamera[0] = glGenBuffers()
-        glBindBuffer(GL_ARRAY_BUFFER, this.vboCamera[0])
-        glBufferData(GL_ARRAY_BUFFER, verticesBuffer, GL_STATIC_DRAW)
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0)
-        glEnableVertexAttribArray(0)
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-
-        this.vboCamera[1] = glGenBuffers()
-        glBindBuffer(GL_ARRAY_BUFFER, this.vboCamera[1])
-        glBufferData(GL_ARRAY_BUFFER, colorsBuffer, GL_STATIC_DRAW)
-        glVertexAttribPointer(1, 3, GL_FLOAT, false, 0, 0)
-        glEnableVertexAttribArray(1)
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-
-        glBindVertexArray(0)
-
-
-        // 頂点情報のすべての情報を持つVAOをバインドする
-        glBindVertexArray(this.vaoCamera)
-        glEnableVertexAttribArray(0)
-
-        glUseProgram(this.shaderCamera)
-        // 頂点情報を描画する
-        glDrawArrays(GL_LINES, 0, vertices.size / 3)
-
-        // 全ての選択を外す
-        glUseProgram(0)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
-        glDisableVertexAttribArray(0)
-        glBindVertexArray(0)
     }
 }

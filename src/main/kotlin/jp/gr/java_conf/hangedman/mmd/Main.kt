@@ -9,6 +9,7 @@ import jp.gr.java_conf.hangedman.mmd.renderable_impl.MmdLwjgl
 import jp.gr.java_conf.hangedman.mmd.renderable_impl.XyzAxis
 import org.lwjgl.Version
 import org.lwjgl.glfw.GLFW.*
+import org.lwjgl.glfw.GLFWScrollCallback
 import org.lwjgl.glfw.GLFWVidMode
 import org.lwjgl.opengl.GL33.GL_VERSION
 import org.lwjgl.system.Configuration
@@ -80,11 +81,16 @@ fun initWindow(): Long {
 }
 
 fun setCallbacks(windowId: Long, renderables: List<Renderable>) {
-    glfwSetCursorPosCallback(windowId) { windowId, xpos, ypos ->
-        renderables.forEach { r -> r.cursorPosCallback(windowId, xpos, ypos) }
+    glfwSetCursorPosCallback(windowId) { id, xpos, ypos ->
+        renderables.forEach { r -> r.cursorPosCallback(id, xpos, ypos) }
     }
-    glfwSetKeyCallback(windowId) { windowId, key, scancode, action, mods ->
-        renderables.forEach { r -> r.keyCallback(windowId, key, scancode, action, mods) }
+    glfwSetKeyCallback(windowId) { id, key, scancode, action, mods ->
+        renderables.forEach { r -> r.keyCallback(id, key, scancode, action, mods) }
     }
+    glfwSetScrollCallback(windowId, object : GLFWScrollCallback() {
+        override fun invoke(windowId: Long, xoffset: Double, yoffset: Double) {
+            renderables.forEach { r -> r.setScrollCallback(windowId, xoffset, yoffset) }
+        }
+    })
 }
 

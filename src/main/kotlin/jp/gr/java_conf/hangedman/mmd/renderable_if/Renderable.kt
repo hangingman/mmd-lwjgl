@@ -12,4 +12,5 @@ interface Renderable {
 
     fun cursorPosCallback(windowId: Long, xpos: Double, ypos: Double)
     fun keyCallback(windowId: Long, key: Int, scancode: Int, action: Int, mods: Int)
+    fun setScrollCallback(windowId: Long, xoffset: Double, yoffset: Double)
 }
