@@ -28,7 +28,7 @@ fun getCurrentWH(): Pair<Int, Int> {
     return widthBuffer.get() to heightBuffer.get()
 }
 
-fun Matrix4f.createProjectionMatrix(foV: Float): Matrix4f {
+fun createProjectionMatrix(foV: Float): Matrix4f {
 
     // projection（投影）の方法は複数ある, とりあえずズームが動いているorthoで
     return Matrix4f().ortho(
@@ -39,4 +39,19 @@ fun Matrix4f.createProjectionMatrix(foV: Float): Matrix4f {
             0.1f,
             100f
     )
+}
+
+fun Matrix4f.orbitBy(modelCenter: Vector3f, angleY: Float, angleX: Float, focalLength: Float) {
+    // Setup both camera's view matrices
+    val modelCenterCp = Vector3f(modelCenter)
+    val recenter = Matrix4f().translate(modelCenterCp.mul(-1.0f)) //not needed if world origin
+    val rotation = Matrix4f()
+            .rotateY(angleY) //can be replaced by glm::eulerAngleZXY(yaw, pitch, roll) ...
+            .rotateX(angleX)
+    val moveBack = Matrix4f().translate(modelCenter) //not needed if world origin
+    val transfer = moveBack.mul(rotation).mul(recenter) //order from right to left
+
+    val eye = Vector3f(0f, modelCenter.y, -focalLength).mulProject(transfer)
+    val up = Vector3f(0f, 1f, 0f)
+    this.setLookAt(eye, modelCenter, up)
 }

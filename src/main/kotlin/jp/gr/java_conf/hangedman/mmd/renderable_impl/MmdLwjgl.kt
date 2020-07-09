@@ -4,6 +4,7 @@ import jp.gr.java_conf.hangedman.lwjgl.BufferBuilder.buildFloatBuffer
 import jp.gr.java_conf.hangedman.lwjgl.ModelViewProjection.updateMVP
 import jp.gr.java_conf.hangedman.lwjgl.ShaderHandler.makeShader
 import jp.gr.java_conf.hangedman.lwjgl.getCurrentWH
+import jp.gr.java_conf.hangedman.lwjgl.orbitBy
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.height
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.width
 import jp.gr.java_conf.hangedman.mmd.VboIndex
@@ -180,20 +181,8 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
         // Setup both camera's projection matrices
         projMatrix[0].setPerspective(Math.toRadians(40.0).toFloat(), (width/height).toFloat(), 0.1f, 100.0f)
         //projMatrix[1].setPerspective(Math.toRadians(30.0).toFloat(), (width/height).toFloat(), 2.0f, 5.0f)
-
-        // Setup both camera's view matrices
-        val recenter = Matrix4f().translate(modelCenter.mul(-1.0f)) //not needed if world origin
-        val rotation = Matrix4f().rotateY(rotation[rotationY]) //can be replaced by glm::eulerAngleZXY(yaw, pitch, roll) ...
-        val moveBack = Matrix4f().translate(modelCenter) //not needed if world origin
-
-        val transfer = moveBack.mul(rotation).mul(recenter) //order from right to left
-        //val transfer = recenter.mul(rotation).mul(moveBack) //order from right to left
-
-        val eye = Vector3f(0f, modelCenter.y, -focalLength).mulProject(transfer)
-        val up = Vector3f(0f, 1f, 0f).mulProject(transfer)
-        viewMatrix[0].setLookAt(eye, modelCenter, up)
-
-        println("eye: $eye, center: $modelCenter, up: $up")
+        //orbitBy(modelCenter, viewMatrix[0])
+        viewMatrix[0].orbitBy(modelCenter, rotation[rotationY], rotation[rotationX], focalLength)
 
         // Apply model transformation to active camera's view
         //modelMatrix.rotationY(angle * Math.toRadians(10.0).toFloat())
@@ -267,7 +256,7 @@ class MmdLwjgl(override val windowId: Long) : Renderable {
 
         println("angle = $angleX, $angleY")
         cameraRotate[rotationY] = angleX * 20.0f
-        cameraRotate[rotationX] = angleY * 20.0f
+        cameraRotate[rotationX] = -angleY * 20.0f
     }
 
     override fun keyCallback(windowId: Long, key: Int, scancode: Int, action: Int, mods: Int) {

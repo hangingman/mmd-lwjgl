@@ -25,7 +25,7 @@ object ModelViewProjection {
 
         // Projection行列(カメラの座標から、映し出される（射影）ものへの相対値)
         // 頂点シェーダーのグローバルGLSL変数"projection"に設定
-        val projectionMatrix = Matrix4f().createProjectionMatrix(fov)
+        val projectionMatrix = createProjectionMatrix(fov)
         val uniProjection = glGetUniformLocation(shader, "projection")
         glUniformMatrix4fv(uniProjection, false, projectionMatrix.value())
     }
