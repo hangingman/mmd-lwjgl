@@ -13,11 +13,10 @@ open class RenderableBase(override val windowId: Long) : Renderable {
     var lastTime: Long = firstTime
     var rotationY = 0
     var rotationX = 1
-    var rotate = 0.0f
     var cameraRotate = floatArrayOf(0.0f, 0.0f)
     var rotation = floatArrayOf(0.0f, 0.0f)
     var modelCenter = Vector3f(0f, 0f, 0f)
-    var focalLength = 15f  // 焦点距離
+    var focalLength = 30f  // 焦点距離
     var previousXpos = 0.0
     var previousYpos = 0.0
 
@@ -50,7 +49,7 @@ open class RenderableBase(override val windowId: Long) : Renderable {
         val angleY = atan(yposDelta / focalLength.toDouble()).toFloat()
 
         cameraRotate[rotationY] = angleX * 20.0f
-        cameraRotate[rotationX] = -angleY * 20.0f
+        cameraRotate[rotationX] = angleY * 20.0f
     }
 
     override fun keyCallback(windowId: Long, key: Int, scancode: Int, action: Int, mods: Int) {}
