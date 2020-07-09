@@ -43,9 +43,9 @@ object PmdParser {
         }
     """.trimIndent())
 
-    fun parse(stream: InputStream): Mesh {
+    fun parse(stream: InputStream): PmdStruct {
         return pmdParser
                 .parse(stream) // Struct内部にデータ型以外のものも設定したいのでフラグをセット
-                .mapTo(Mesh(), FLAG_IGNORE_MISSING_VALUES)
+                .mapTo(PmdStruct(), FLAG_IGNORE_MISSING_VALUES)
     }
 }

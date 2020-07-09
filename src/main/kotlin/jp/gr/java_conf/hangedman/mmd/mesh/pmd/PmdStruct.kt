@@ -29,7 +29,7 @@ class Material {
 }
 
 @Bin
-class Mesh : Mesh {
+class PmdStruct : Mesh {
 
     // ヘッダ
     @Bin(order = 1)

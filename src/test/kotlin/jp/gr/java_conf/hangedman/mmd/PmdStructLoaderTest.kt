@@ -3,7 +3,7 @@ package jp.gr.java_conf.hangedman.mmd
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 
-class MeshLoaderTest {
+class PmdStructLoaderTest {
 
     @Test
     fun testLoadPmdFile() {

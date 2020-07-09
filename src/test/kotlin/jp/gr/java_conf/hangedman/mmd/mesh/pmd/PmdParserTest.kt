@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test
 
 class PmdParserTest {
 
-    private lateinit var mesh: Mesh
+    private lateinit var mesh: PmdStruct
 
     @BeforeEach
     fun beforeEach() {
