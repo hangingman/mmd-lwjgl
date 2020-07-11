@@ -25,7 +25,10 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
     private var vbo: IntArray = IntArray(VboIndex.values().size)
     private var vboi: Int = 0
     private var indicesCount: Int = 0
+    private var attribVertex: Int = 0
+    private var attribTexcoord: Int = 0
     private var samplerIds: MutableList<Int> = mutableListOf()
+    private var textureIds: MutableList<Int> = mutableListOf()
 
     // VAO, VBO, VBOIの読み込み
     private fun load(mesh: Mesh?) {
@@ -39,6 +42,7 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
         val normalsBuffer = mesh.normalsBuffer()               // 法線
         val shininessBuffer = mesh.shininessBuffer()           // 光沢度
         val edgeFlagBuffer = mesh.edgeFlagBuffer()             // エッジの有無
+        val texCoordBuffer = mesh.texCoordBuffer()             // テクスチャ適用座標
 
         // カメラの視点のためPMDモデルの中心を計算する(0, Ymax + Ymin / 2, 0)
         val modelYMax = mesh.getModelYMax()
@@ -49,7 +53,9 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
         this.indicesCount = indicesCount
 
         // モデルに設定されているテクスチャを読み取る
-        this.samplerIds.addAll(initTextures(mesh.getTexturePaths()))
+        val (textureId, samplerId) = initTextures(mesh.getTexturePaths())
+        this.textureIds.add(textureId)
+        this.samplerIds.add(samplerId)
 
         // Vertex Array Objectをメモリ上に作成し選択する(バインド)
         // VAOはデフォルトで16の属性(VBO)を設定できる
@@ -65,7 +71,8 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
                 VboIndex.SPECULAR_COLOR to specularColorsBuffer,
                 VboIndex.NORMAL to normalsBuffer,
                 VboIndex.SHININESS to shininessBuffer,
-                VboIndex.EDGE to edgeFlagBuffer
+                VboIndex.EDGE to edgeFlagBuffer,
+                VboIndex.TEXTURE to texCoordBuffer
         ).forEach { (index, buffer) ->
             this.vbo[index.asInt] = glGenBuffers()
             glBindBuffer(GL_ARRAY_BUFFER, this.vbo[index.asInt])
@@ -113,6 +120,12 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
             this.shader = shader
         }
 
+        // 初期化のため一時シェーダーを使う
+        glUseProgram(this.shader)
+        attribVertex = glGetAttribLocation(this.shader, "position")
+        attribTexcoord = glGetAttribLocation(this.shader, "texcoord")
+        glUseProgram(0)
+
         return this
     }
 
@@ -147,21 +160,28 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
 
         // 頂点情報のすべての情報を持つVAOをバインドする
         glBindVertexArray(this.vao)
-        glEnableVertexAttribArray(0)
+        glEnableVertexAttribArray(attribVertex)
+        //glEnableVertexAttribArray(attribTexcoord)
+
+        //glActiveTexture(GL_TEXTURE0)
+        //glBindTexture(GL_TEXTURE_2D, textureIds[0])
+        //glBindSampler(0, samplerIds[0])
 
         // 頂点情報の並びの情報をすべて持つVBO indexをバインドする
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.vboi)
         glUseProgram(this.shader)
         // MVP行列の更新
         updatePos(windowId)
-
         // 頂点情報を描画する
         glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_SHORT, 0)
 
         // 全ての選択を外す
         glUseProgram(0)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
-        glDisableVertexAttribArray(0)
+        glDisableVertexAttribArray(attribVertex)
+        //glDisableVertexAttribArray(attribTexcoord)
+        //glBindSampler(0, 0)
+        //glBindTexture(GL_TEXTURE_2D, 0)
         glBindVertexArray(0)
     }
 

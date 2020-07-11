@@ -14,8 +14,11 @@ interface Mesh {
     fun shininessBuffer(): FloatBuffer
     fun edgeFlagBuffer(): FloatBuffer
     fun normalsBuffer(): FloatBuffer
+
     fun faceVertPair(): Pair<Int, ShortBuffer>
+
     fun getTexturePaths(): List<String>
+    fun texCoordBuffer (): FloatBuffer
 
     fun getModelYMax(): Float
     fun getModelYMin(): Float

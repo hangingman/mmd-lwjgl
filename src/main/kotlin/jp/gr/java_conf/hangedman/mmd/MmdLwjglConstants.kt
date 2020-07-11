@@ -16,7 +16,8 @@ enum class VboIndex(val asInt: Int) {
     SPECULAR_COLOR(4),
     NORMAL(5),
     SHININESS(6),
-    EDGE(7);
+    EDGE(7),
+    TEXTURE(8);
 
     fun elementSize(): Int {
         return when(this) {
@@ -28,6 +29,7 @@ enum class VboIndex(val asInt: Int) {
             NORMAL -> 3
             SHININESS -> 1
             EDGE -> 1
+            TEXTURE -> 2
             else -> throw IllegalStateException("Invalid VboIndex Enum")
         }
     }

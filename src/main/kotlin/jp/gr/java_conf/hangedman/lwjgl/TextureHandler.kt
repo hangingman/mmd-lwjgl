@@ -10,11 +10,22 @@ import java.nio.ByteBuffer
 
 object TextureHandler {
 
-    fun initTextures(textures: List<String>): List<Int> {
-        return textures.map { initTexture(it) }
+    fun initTextures(textures: List<String>): Pair<Int, Int> {
+
+        // Generate Texture
+        val textureId = glGenTextures()
+        // set Sampler
+        val samplerId = glGenSamplers()
+        glSamplerParameteri(samplerId, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glSamplerParameteri(samplerId, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glSamplerParameteri(samplerId, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT)
+        glSamplerParameteri(samplerId, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT)
+
+        textures.forEach { initTexture(textureId, it) }
+        return textureId to samplerId
     }
 
-    private fun initTexture(texture: String): Int {
+    private fun initTexture(textureId: Int, texture: String) {
 
         // Load Image using stb
         val width = BufferUtils.createIntBuffer(1)
@@ -24,9 +35,7 @@ object TextureHandler {
         val img: ByteBuffer = STBImage.stbi_load(texture, width, height, comp, STBImage.STBI_default)
                 ?: throw IllegalStateException("テクスチャ $texture が読み込めませんでした")
 
-        // Generate Texture
-        val textureID = glGenTextures()
-        glBindTexture(GL_TEXTURE_2D, textureID)
+        glBindTexture(GL_TEXTURE_2D, textureId)
         if (comp.get(0) == 3) {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width.get(0), height.get(0), 0,
                     GL_RGB, GL_UNSIGNED_BYTE, img)
@@ -35,13 +44,5 @@ object TextureHandler {
                     GL_RGBA, GL_UNSIGNED_BYTE, img)
         }
         STBImage.stbi_image_free(img)
-
-        // set Sampler
-        val samplerId = glGenSamplers()
-        glSamplerParameteri(samplerId, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glSamplerParameteri(samplerId, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glSamplerParameteri(samplerId, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT)
-        glSamplerParameteri(samplerId, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT)
-        return samplerId
     }
 }

@@ -32,6 +32,10 @@ class Material {
     companion object {
         const val NUL: Char = 0x00.toByte().toChar()
     }
+
+    fun hasTexture(): Boolean {
+        return !textureFileName.map { it.toChar() }.all { it == NUL }
+    }
 }
 
 @Bin
@@ -222,15 +226,31 @@ class PmdStruct(override val meshPath: String) : Mesh {
         if (material.isNullOrEmpty())
             return emptyList()
 
-        return material!!.map { m ->
+        return material!!.filter { m ->
+            // 空のファイルは除く
+            m.hasTexture()
+        }.map { m ->
             // Shift-JISは滅べ
             m.textureFileName.toString(charset = charset("Shift_JIS"))
-        }.filterNot { s ->
-            // 空のファイルは除く
-            s.toCharArray().all { c -> c == NUL }
         }.map { s ->
             // 終端文字以降はいらないので削り、モデルのあるパスを指定する
             "${File(meshPath).parent}${File.separator}${s.substring(0, s.indexOf(NUL))}"
         }
+    }
+
+    override fun texCoordBuffer(): FloatBuffer {
+        val vertexMaterialMap = this.vertexMaterialMap
+
+        return this.vertex!!
+                .mapIndexed { i, v ->
+                    val floatList = mutableListOf<Float>()
+                    val m = vertexMaterialMap.find { (range, _) -> i <= range }!!.second
+                    if (m.hasTexture()) {
+                        floatList.addAll(v.uv.toList())
+                    }
+                    floatList
+                }.flatten().toFloatArray().run {
+                    buildFloatBuffer(this)
+                }
     }
 }

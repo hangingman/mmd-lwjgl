@@ -14,6 +14,7 @@ object ModelShader {
         in vec3 normal;
         in float shininess;
         in int isEdge;
+        //in vec2 texcoord;
         
         // 次のフラグメントシェーダーに渡す頂点カラー
         out float vAlpha;
@@ -24,6 +25,7 @@ object ModelShader {
         out vec3 vPosition;
         out float vShininess;
         out float vIsEdge;
+        //out vec2 vTexcoord;
         
         // プログラムから指定されるグローバルGLSL変数
         uniform mat4 model;
@@ -43,6 +45,7 @@ object ModelShader {
             vPosition = position;
             vShininess = shininess;
             vIsEdge = isEdge;
+            //vTexcoord = texcoord;
             
             if (isEdge == 1)
             {
@@ -73,6 +76,7 @@ object ModelShader {
         in vec3 vPosition;
         in float vShininess;
         in float vIsEdge;
+        //in vec2 vTexcoord;
         
         out vec4 fragColor;   // フラグメントシェーダから出力する色
         
