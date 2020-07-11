@@ -1,7 +1,7 @@
 package jp.gr.java_conf.hangedman.mmd.mesh.pmd
 
 import com.github.doyaaaaaken.kotlincsv.dsl.csvReader
-import jp.gr.java_conf.hangedman.mmd.MeshLoader
+import jp.gr.java_conf.hangedman.mmd.mesh.pmd.Material.Companion.NUL
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Assertions.assertArrayEquals
@@ -126,10 +126,14 @@ class PmdParserTest {
             assertEquals(toonIndex, mesh.material!![index].toonIndex)
             assertEquals(edgeFlag, mesh.material!![index].edgeFlag)
             assertEquals(faceVertCount, mesh.material!![index].faceVertCount)
-            //assertEquals(textureFileName, pmdStruct.material!![index].textureFileName)
+            if (index==5) {
+                // テクスチャのファイル名はNull終端で、残りは-3で埋められてる
+                val emptyByteArray = ByteArray(20){-3}
+                val fileName = "eye2.bmp$NUL"
+                assertArrayEquals(fileName.toByteArray().copyInto(emptyByteArray), mesh.material!![index].textureFileName)
+            } else {
+                assertArrayEquals(ByteArray(20), mesh.material!![index].textureFileName)
+            }
         }
-
-
     }
-
 }

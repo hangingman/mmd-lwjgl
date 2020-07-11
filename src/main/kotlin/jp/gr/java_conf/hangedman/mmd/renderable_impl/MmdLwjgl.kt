@@ -25,6 +25,7 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
     private var vbo: IntArray = IntArray(VboIndex.values().size)
     private var vboi: Int = 0
     private var indicesCount: Int = 0
+    private var samplerIds: MutableList<Int> = mutableListOf()
 
     // VAO, VBO, VBOIの読み込み
     private fun load(mesh: Mesh?) {
@@ -48,7 +49,7 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
         this.indicesCount = indicesCount
 
         // モデルに設定されているテクスチャを読み取る
-        //initTextures(mesh.getTexturePaths())
+        this.samplerIds.addAll(initTextures(mesh.getTexturePaths()))
 
         // Vertex Array Objectをメモリ上に作成し選択する(バインド)
         // VAOはデフォルトで16の属性(VBO)を設定できる
@@ -174,6 +175,10 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
         glDeleteShader(this.vertShaderObj)
         glDeleteShader(this.fragShaderObj)
         glDeleteProgram(this.shader)
+
+        this.samplerIds.forEach {
+            glDeleteSamplers(it)
+        }
     }
 
     override fun keyCallback(windowId: Long, key: Int, scancode: Int, action: Int, mods: Int) {

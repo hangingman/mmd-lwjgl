@@ -3,7 +3,9 @@ package jp.gr.java_conf.hangedman.mmd.mesh.pmd
 import com.igormaznitsa.jbbp.mapper.Bin
 import jp.gr.java_conf.hangedman.lwjgl.BufferBuilder.buildFloatBuffer
 import jp.gr.java_conf.hangedman.lwjgl.BufferBuilder.buildShortBuffer
+import jp.gr.java_conf.hangedman.mmd.mesh.pmd.Material.Companion.NUL
 import jp.gr.java_conf.hangedman.mmd.mesh_if.Mesh
+import java.io.File
 import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 
@@ -26,6 +28,10 @@ class Material {
     @Bin var edgeFlag: Byte = 0                                   // エッジ
     @Bin var faceVertCount: Int = 0                               // 面頂点数
     @Bin var textureFileName: ByteArray = ByteArray(0)       // テクスチャーファイル名
+
+    companion object {
+        const val NUL: Char = 0x00.toByte().toChar()
+    }
 }
 
 @Bin
@@ -215,6 +221,16 @@ class PmdStruct(override val meshPath: String) : Mesh {
     override fun getTexturePaths(): List<String> {
         if (material.isNullOrEmpty())
             return emptyList()
-        return material!!.map { m -> m.textureFileName.toString() }
+
+        return material!!.map { m ->
+            // Shift-JISは滅べ
+            m.textureFileName.toString(charset = charset("Shift_JIS"))
+        }.filterNot { s ->
+            // 空のファイルは除く
+            s.toCharArray().all { c -> c == NUL }
+        }.map { s ->
+            // 終端文字以降はいらないので削り、モデルのあるパスを指定する
+            "${File(meshPath).parent}${File.separator}${s.substring(0, s.indexOf(NUL))}"
+        }
     }
 }
