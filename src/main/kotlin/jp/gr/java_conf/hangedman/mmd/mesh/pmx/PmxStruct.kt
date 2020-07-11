@@ -29,7 +29,7 @@ class Material {
 }
 
 @Bin
-class PmxStruct : Mesh {
+class PmxStruct(override val meshPath: String) : Mesh {
 
     // ヘッダ
     @Bin(order = 1)
@@ -202,6 +202,10 @@ class PmxStruct : Mesh {
 
     override fun faceVertPair(): Pair<Int, ShortBuffer> {
         return this.faceVertCount to buildShortBuffer(this.faceVertIndex!!)
+    }
+
+    override fun getTexturePaths(): List<String> {
+        TODO("Not yet implemented")
     }
 
     override fun getModelYMax(): Float {

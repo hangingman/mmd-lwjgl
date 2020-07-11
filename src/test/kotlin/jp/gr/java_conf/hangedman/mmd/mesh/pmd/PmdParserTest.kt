@@ -15,8 +15,7 @@ class PmdParserTest {
 
     @BeforeEach
     fun beforeEach() {
-        val stream = MeshLoader.getResourceAsStream("HatsuneMiku.pmd")
-        mesh = PmdParser.parse(stream)
+        mesh = PmdParser.parse("HatsuneMiku.pmd")
     }
 
     @Test

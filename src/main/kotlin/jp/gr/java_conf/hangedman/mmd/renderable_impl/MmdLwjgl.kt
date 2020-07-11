@@ -2,6 +2,7 @@ package jp.gr.java_conf.hangedman.mmd.renderable_impl
 
 import jp.gr.java_conf.hangedman.lwjgl.ModelViewProjection.updateMVP
 import jp.gr.java_conf.hangedman.lwjgl.ShaderHandler.makeShader
+import jp.gr.java_conf.hangedman.lwjgl.TextureHandler.initTextures
 import jp.gr.java_conf.hangedman.lwjgl.orbitBy
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.height
 import jp.gr.java_conf.hangedman.mmd.MmdLwjglConstants.width
@@ -26,7 +27,7 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
     private var indicesCount: Int = 0
 
     // VAO, VBO, VBOIの読み込み
-    private fun load(mesh: jp.gr.java_conf.hangedman.mmd.mesh_if.Mesh?) {
+    private fun load(mesh: Mesh?) {
 
         requireNotNull(mesh)
         val verticesBuffer = mesh.verticesBuffer()             // 頂点
@@ -45,6 +46,9 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
 
         val (indicesCount, indicesBuffer) = mesh.faceVertPair()  // 面頂点
         this.indicesCount = indicesCount
+
+        // モデルに設定されているテクスチャを読み取る
+        //initTextures(mesh.getTexturePaths())
 
         // Vertex Array Objectをメモリ上に作成し選択する(バインド)
         // VAOはデフォルトで16の属性(VBO)を設定できる

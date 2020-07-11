@@ -2,6 +2,7 @@ package jp.gr.java_conf.hangedman.mmd
 
 import jp.gr.java_conf.hangedman.mmd.mesh.pmd.PmdParser
 import jp.gr.java_conf.hangedman.mmd.mesh.pmx.PmxParser
+import jp.gr.java_conf.hangedman.mmd.mesh_if.Mesh
 import org.apache.commons.lang3.time.DurationFormatUtils
 import org.apache.commons.lang3.time.StopWatch
 import org.slf4j.LoggerFactory
@@ -12,15 +13,14 @@ object MeshLoader {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    fun loadMeshFile(meshFile: String): jp.gr.java_conf.hangedman.mmd.mesh_if.Mesh {
+    fun loadMeshFile(meshFile: String): Mesh {
         val stopWatch = StopWatch()
         stopWatch.start()
         logger.info("load file: $meshFile")
 
-        val stream = getResourceAsStream(meshFile)
-        val mesh = when (val ext = File(meshFile).extension) {
-            "pmd" -> PmdParser.parse(stream)
-            "pmx" -> PmxParser.parse(stream)
+        val mesh: Mesh = when (val ext = File(meshFile).extension) {
+            "pmd" -> PmdParser.parse(meshFile)
+            "pmx" -> PmxParser.parse(meshFile)
             else -> {
                 throw IllegalStateException("$ext format is not supported now")
             }

@@ -4,6 +4,8 @@ import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 
 interface Mesh {
+    val meshPath: String
+
     fun verticesBuffer(): FloatBuffer
     fun alphaBuffer(): FloatBuffer
     fun diffuseColorsBuffer(): FloatBuffer
@@ -13,6 +15,7 @@ interface Mesh {
     fun edgeFlagBuffer(): FloatBuffer
     fun normalsBuffer(): FloatBuffer
     fun faceVertPair(): Pair<Int, ShortBuffer>
+    fun getTexturePaths(): List<String>
 
     fun getModelYMax(): Float
     fun getModelYMin(): Float

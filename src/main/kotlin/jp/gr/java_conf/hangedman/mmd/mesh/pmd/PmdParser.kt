@@ -2,9 +2,11 @@ package jp.gr.java_conf.hangedman.mmd.mesh.pmd
 
 import com.igormaznitsa.jbbp.JBBPParser
 import com.igormaznitsa.jbbp.mapper.JBBPMapper.FLAG_IGNORE_MISSING_VALUES
-import java.io.InputStream
+import jp.gr.java_conf.hangedman.mmd.MeshLoader.getResourceAsStream
+import jp.gr.java_conf.hangedman.mmd.mesh_if.Mesh
+import jp.gr.java_conf.hangedman.mmd.mesh_if.MeshParser
 
-object PmdParser {
+object PmdParser : MeshParser {
 
     private val pmdParser: JBBPParser = JBBPParser.prepare("""
         // ヘッダ
@@ -43,9 +45,12 @@ object PmdParser {
         }
     """.trimIndent())
 
-    fun parse(stream: InputStream): PmdStruct {
+    override fun <T : Mesh> parse(meshPath: String): T {
+        val stream = getResourceAsStream(meshPath)
+
+        @Suppress("UNCHECKED_CAST")
         return pmdParser
-                .parse(stream) // Struct内部にデータ型以外のものも設定したいのでフラグをセット
-                .mapTo(PmdStruct(), FLAG_IGNORE_MISSING_VALUES)
+                .parse(stream)
+                .mapTo(PmdStruct(meshPath), FLAG_IGNORE_MISSING_VALUES) as T
     }
 }

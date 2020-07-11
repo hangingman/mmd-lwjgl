@@ -29,7 +29,7 @@ class Material {
 }
 
 @Bin
-class PmdStruct : Mesh {
+class PmdStruct(override val meshPath: String) : Mesh {
 
     // ヘッダ
     @Bin(order = 1)
@@ -66,7 +66,7 @@ class PmdStruct : Mesh {
     var material: Array<Material>? = null
 
     // 面頂点リストの適用合計値に対してどの材質リストを使うかを保持する連想配列
-    val materialRanged: List<Pair<Int, Material>> by lazy {
+    private val materialRanged: List<Pair<Int, Material>> by lazy {
         this.material!!
                 .mapIndexed { i, m ->
                     val materialRanged = this.material!!.filterIndexed { index, material ->
@@ -77,7 +77,7 @@ class PmdStruct : Mesh {
     }
 
     // 頂点に対してどの材質リストを使うかを保持する連想配列
-    val vertexMaterialMap: List<Pair<Int, Material>> by lazy {
+    private val vertexMaterialMap: List<Pair<Int, Material>> by lazy {
         this.vertex!!
                 .mapIndexed { index, _ ->
                     val faceVertIndex = this.faceVertIndex!!.indexOfFirst { faceVert -> faceVert == index.toShort() }
@@ -210,5 +210,11 @@ class PmdStruct : Mesh {
 
     override fun getModelYMin(): Float {
         return vertex!!.map{ v -> v.pos[1] }.min()!!
+    }
+
+    override fun getTexturePaths(): List<String> {
+        if (material.isNullOrEmpty())
+            return emptyList()
+        return material!!.map { m -> m.textureFileName.toString() }
     }
 }
