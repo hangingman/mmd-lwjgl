@@ -109,9 +109,6 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
         glEnable(GL_DEPTH_TEST)  // デプステストを有効にする
         glDepthFunc(GL_LESS)     // 前のものよりもカメラに近ければ、フラグメントを受け入れる
 
-        glEnable(GL_CULL_FACE)   // 視点に対して裏を向いている面を表示しないようにする
-        glCullFace(GL_BACK)
-
         // ここから描画情報の読み込み
         load(mesh)
 
@@ -161,7 +158,10 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
         glUniform3f(uEdgeColor, 0f, 0f, 0f)
         // テクスチャのサンプラー
         val uSampler2D = glGetUniformLocation(shader, "uTexSampler")
-        glUniform1i(uSampler2D, this.samplerId)
+        // ここはサンプラーのハンドラではなくtexture unit 0を
+        // 設定するようだ、わかりにくい
+        // https://www.3dgep.com/texturing-and-lighting-with-opengl-and-glsl/
+        glUniform1i(uSampler2D, 0)
     }
 
     override fun render() {

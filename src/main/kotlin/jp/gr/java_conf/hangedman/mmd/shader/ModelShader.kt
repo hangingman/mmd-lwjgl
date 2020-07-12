@@ -105,8 +105,7 @@ object ModelShader {
             if((UV[0]!=0 && UV[1]!=0))
             {
                 // テクスチャ使用
-                fragColor = texture(uTexSampler, UV);
-                //fragColor = texture2D(uTexSampler, UV) * vec4(ambientColor + diffuseColor + specularColor, vAlpha);
+                fragColor = texture2D(uTexSampler, UV) * vec4(ambientColor + diffuseColor + specularColor, vAlpha);
                 return;
             }
             fragColor = vec4(ambientColor + diffuseColor + specularColor, vAlpha);
