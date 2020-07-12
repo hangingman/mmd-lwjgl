@@ -123,7 +123,7 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
         // 初期化のため一時シェーダーを使う
         glUseProgram(this.shader)
         attribVertex = glGetAttribLocation(this.shader, "position")
-        attribTexcoord = glGetAttribLocation(this.shader, "texcoord")
+        attribTexcoord = glGetAttribLocation(this.shader, "vUV")
         glUseProgram(0)
 
         return this
@@ -152,6 +152,9 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
         glUniform1f(uEdgeSize, 0.1f)
         val uEdgeColor = glGetUniformLocation(shader, "uEdgeColor")
         glUniform3f(uEdgeColor, 0f, 0f, 0f)
+        // テクスチャのサンプラー
+        val uSampler2D = glGetUniformLocation(shader, "uTexSampler")
+        glUniform1i(uSampler2D, this.samplerIds[0])
     }
 
     override fun render() {
@@ -161,11 +164,11 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
         // 頂点情報のすべての情報を持つVAOをバインドする
         glBindVertexArray(this.vao)
         glEnableVertexAttribArray(attribVertex)
-        //glEnableVertexAttribArray(attribTexcoord)
+        glEnableVertexAttribArray(attribTexcoord)
 
-        //glActiveTexture(GL_TEXTURE0)
-        //glBindTexture(GL_TEXTURE_2D, textureIds[0])
-        //glBindSampler(0, samplerIds[0])
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, textureIds[0])
+        glBindSampler(0, samplerIds[0])
 
         // 頂点情報の並びの情報をすべて持つVBO indexをバインドする
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.vboi)
@@ -178,10 +181,11 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
         // 全ての選択を外す
         glUseProgram(0)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
+
         glDisableVertexAttribArray(attribVertex)
-        //glDisableVertexAttribArray(attribTexcoord)
-        //glBindSampler(0, 0)
-        //glBindTexture(GL_TEXTURE_2D, 0)
+        glDisableVertexAttribArray(attribTexcoord)
+        glBindSampler(0, 0)
+        glBindTexture(GL_TEXTURE_2D, 0)
         glBindVertexArray(0)
     }
 

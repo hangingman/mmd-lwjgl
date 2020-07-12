@@ -239,15 +239,11 @@ class PmdStruct(override val meshPath: String) : Mesh {
     }
 
     override fun texCoordBuffer(): FloatBuffer {
-        val vertexMaterialMap = this.vertexMaterialMap
 
         return this.vertex!!
-                .mapIndexed { i, v ->
+                .mapIndexed { _, v ->
                     val floatList = mutableListOf<Float>()
-                    val m = vertexMaterialMap.find { (range, _) -> i <= range }!!.second
-                    if (m.hasTexture()) {
-                        floatList.addAll(v.uv.toList())
-                    }
+                    floatList.addAll(v.uv.toList())
                     floatList
                 }.flatten().toFloatArray().run {
                     buildFloatBuffer(this)
