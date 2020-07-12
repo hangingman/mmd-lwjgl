@@ -49,7 +49,7 @@ open class RenderableBase(override val windowId: Long) : Renderable {
         val angleY = atan(yposDelta / focalLength.toDouble()).toFloat()
 
         cameraRotate[rotationY] = angleX * 20.0f
-        cameraRotate[rotationX] = angleY * 20.0f
+        cameraRotate[rotationX] = - angleY * 20.0f
     }
 
     override fun keyCallback(windowId: Long, key: Int, scancode: Int, action: Int, mods: Int) {}

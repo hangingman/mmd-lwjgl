@@ -1,7 +1,7 @@
 package jp.gr.java_conf.hangedman.mmd.mesh.pmd
 
 import com.github.doyaaaaaken.kotlincsv.dsl.csvReader
-import jp.gr.java_conf.hangedman.mmd.mesh.pmd.Material.Companion.NUL
+import jp.gr.java_conf.hangedman.mmd.mesh_if.Mesh.Companion.NUL
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Assertions.assertArrayEquals

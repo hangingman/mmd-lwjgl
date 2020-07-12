@@ -219,4 +219,8 @@ class PmxStruct(override val meshPath: String) : Mesh {
     override fun getModelYMin(): Float {
         return vertex!!.map{ v -> v.pos[1] }.min()!!
     }
+
+    override fun getModelInfo(): String {
+        TODO("Not yet implemented")
+    }
 }

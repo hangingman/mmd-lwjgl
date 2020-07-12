@@ -17,6 +17,7 @@ import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL33.*
 import org.lwjgl.opengl.GLUtil
 import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J
+import javax.swing.JOptionPane
 
 class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
 
@@ -27,8 +28,8 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
     private var indicesCount: Int = 0
     private var attribVertex: Int = 0
     private var attribTexcoord: Int = 0
-    private var samplerIds: MutableList<Int> = mutableListOf()
-    private var textureIds: MutableList<Int> = mutableListOf()
+    private var samplerId: Int = 0
+    private var textureId: Int = 0
 
     // VAO, VBO, VBOIの読み込み
     private fun load(mesh: Mesh?) {
@@ -54,8 +55,8 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
 
         // モデルに設定されているテクスチャを読み取る
         val (textureId, samplerId) = initTextures(mesh.getTexturePaths())
-        this.textureIds.add(textureId)
-        this.samplerIds.add(samplerId)
+        this.textureId = textureId
+        this.samplerId = samplerId
 
         // Vertex Array Objectをメモリ上に作成し選択する(バインド)
         // VAOはデフォルトで16の属性(VBO)を設定できる
@@ -126,6 +127,12 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
         attribTexcoord = glGetAttribLocation(this.shader, "vUV")
         glUseProgram(0)
 
+        JOptionPane.showMessageDialog(
+                null,
+                mesh!!.getModelInfo(),
+                "モデル情報",
+                JOptionPane.INFORMATION_MESSAGE)
+
         return this
     }
 
@@ -154,7 +161,7 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
         glUniform3f(uEdgeColor, 0f, 0f, 0f)
         // テクスチャのサンプラー
         val uSampler2D = glGetUniformLocation(shader, "uTexSampler")
-        glUniform1i(uSampler2D, this.samplerIds[0])
+        glUniform1i(uSampler2D, this.samplerId)
     }
 
     override fun render() {
@@ -167,8 +174,8 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
         glEnableVertexAttribArray(attribTexcoord)
 
         glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, textureIds[0])
-        glBindSampler(0, samplerIds[0])
+        glBindTexture(GL_TEXTURE_2D, textureId)
+        glBindSampler(0, samplerId)
 
         // 頂点情報の並びの情報をすべて持つVBO indexをバインドする
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.vboi)
@@ -200,9 +207,7 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
         glDeleteShader(this.fragShaderObj)
         glDeleteProgram(this.shader)
 
-        this.samplerIds.forEach {
-            glDeleteSamplers(it)
-        }
+        glDeleteSamplers(this.samplerId)
     }
 
     override fun keyCallback(windowId: Long, key: Int, scancode: Int, action: Int, mods: Int) {

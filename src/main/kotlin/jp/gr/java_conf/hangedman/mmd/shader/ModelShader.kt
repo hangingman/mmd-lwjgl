@@ -106,6 +106,7 @@ object ModelShader {
             {
                 // テクスチャ使用
                 fragColor = texture(uTexSampler, UV);
+                //fragColor = texture2D(uTexSampler, UV) * vec4(ambientColor + diffuseColor + specularColor, vAlpha);
                 return;
             }
             fragColor = vec4(ambientColor + diffuseColor + specularColor, vAlpha);

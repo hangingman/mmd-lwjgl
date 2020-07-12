@@ -1,6 +1,6 @@
 package jp.gr.java_conf.hangedman.mmd.mesh.pmd
 
-import jp.gr.java_conf.hangedman.mmd.mesh.pmd.Material.Companion.NUL
+import jp.gr.java_conf.hangedman.mmd.mesh_if.Mesh.Companion.NUL
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.hasSize

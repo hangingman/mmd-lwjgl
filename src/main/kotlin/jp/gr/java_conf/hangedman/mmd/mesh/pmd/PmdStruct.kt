@@ -3,8 +3,8 @@ package jp.gr.java_conf.hangedman.mmd.mesh.pmd
 import com.igormaznitsa.jbbp.mapper.Bin
 import jp.gr.java_conf.hangedman.lwjgl.BufferBuilder.buildFloatBuffer
 import jp.gr.java_conf.hangedman.lwjgl.BufferBuilder.buildShortBuffer
-import jp.gr.java_conf.hangedman.mmd.mesh.pmd.Material.Companion.NUL
 import jp.gr.java_conf.hangedman.mmd.mesh_if.Mesh
+import jp.gr.java_conf.hangedman.mmd.mesh_if.Mesh.Companion.NUL
 import java.io.File
 import java.nio.FloatBuffer
 import java.nio.ShortBuffer
@@ -28,10 +28,6 @@ class Material {
     @Bin var edgeFlag: Byte = 0                                   // エッジ
     @Bin var faceVertCount: Int = 0                               // 面頂点数
     @Bin var textureFileName: ByteArray = ByteArray(0)       // テクスチャーファイル名
-
-    companion object {
-        const val NUL: Char = 0x00.toByte().toChar()
-    }
 
     fun hasTexture(): Boolean {
         return !textureFileName.map { it.toChar() }.all { it == NUL }
@@ -94,6 +90,12 @@ class PmdStruct(override val meshPath: String) : Mesh {
                     val material = materialRanged.find { m -> m.first >= faceVertIndex }
                     index to material!!.second
                 }
+    }
+
+    override fun getModelInfo(): String {
+        return this.comment!!
+                .toString(charset = charset("Shift_JIS"))
+                .run { this.substring(0, this.indexOf(NUL)) }
     }
 
     override fun verticesBuffer(): FloatBuffer {

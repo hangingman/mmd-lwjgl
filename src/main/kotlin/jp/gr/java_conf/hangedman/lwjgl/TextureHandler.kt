@@ -14,6 +14,12 @@ object TextureHandler {
 
         // Generate Texture
         val textureId = glGenTextures()
+        if (glGetError() != GL_NO_ERROR) {
+            throw IllegalStateException("glGenTextures に失敗")
+        }
+
+        textures.forEach { initTexture(textureId, it) }
+
         // set Sampler
         val samplerId = glGenSamplers()
         glSamplerParameteri(samplerId, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
@@ -21,7 +27,6 @@ object TextureHandler {
         glSamplerParameteri(samplerId, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT)
         glSamplerParameteri(samplerId, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT)
 
-        textures.forEach { initTexture(textureId, it) }
         return textureId to samplerId
     }
 
@@ -37,11 +42,9 @@ object TextureHandler {
 
         glBindTexture(GL_TEXTURE_2D, textureId)
         if (comp.get(0) == 3) {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width.get(0), height.get(0), 0,
-                    GL_RGB, GL_UNSIGNED_BYTE, img)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width.get(0), height.get(0), 0, GL_RGB, GL_UNSIGNED_BYTE, img)
         } else if (comp.get(0) == 4) {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width.get(0), height.get(0), 0,
-                    GL_RGBA, GL_UNSIGNED_BYTE, img)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width.get(0), height.get(0), 0, GL_RGBA, GL_UNSIGNED_BYTE, img)
         }
         STBImage.stbi_image_free(img)
     }

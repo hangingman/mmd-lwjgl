@@ -6,6 +6,10 @@ import java.nio.ShortBuffer
 interface Mesh {
     val meshPath: String
 
+    companion object {
+        const val NUL: Char = 0x00.toByte().toChar()
+    }
+
     fun verticesBuffer(): FloatBuffer
     fun alphaBuffer(): FloatBuffer
     fun diffuseColorsBuffer(): FloatBuffer
@@ -22,4 +26,5 @@ interface Mesh {
 
     fun getModelYMax(): Float
     fun getModelYMin(): Float
+    fun getModelInfo(): String
 }
