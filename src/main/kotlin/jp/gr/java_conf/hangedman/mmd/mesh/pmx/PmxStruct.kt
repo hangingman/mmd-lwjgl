@@ -212,6 +212,14 @@ class PmxStruct(override val meshPath: String) : Mesh {
         TODO("Not yet implemented")
     }
 
+    override fun texLayerBuffer(): FloatBuffer {
+        TODO("Not yet implemented")
+    }
+
+    override fun sphereModeBuffer(): FloatBuffer {
+        TODO("Not yet implemented")
+    }
+
     override fun getModelYMax(): Float {
         return vertex!!.map{ v -> v.pos[1] }.max()!!
     }

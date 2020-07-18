@@ -22,7 +22,9 @@ interface Mesh {
     fun faceVertPair(): Pair<Int, ShortBuffer>
 
     fun getTexturePaths(): List<String>
-    fun texCoordBuffer (): FloatBuffer
+    fun texCoordBuffer(): FloatBuffer
+    fun texLayerBuffer(): FloatBuffer
+    fun sphereModeBuffer(): FloatBuffer  // -1f: スフィアなし、1f: スフィア乗算、2f: スフィア加算
 
     fun getModelYMax(): Float
     fun getModelYMin(): Float

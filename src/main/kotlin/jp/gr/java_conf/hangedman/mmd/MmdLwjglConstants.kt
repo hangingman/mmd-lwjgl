@@ -19,7 +19,9 @@ enum class VboIndex(val asInt: Int) {
     NORMAL(5),
     SHININESS(6),
     EDGE(7),
-    TEXTURE(8);
+    TEXTURE_COORD(8),
+    TEXTURE_LAYER(9),
+    SPHERE_MODE(10);
 
     fun elementSize(): Int {
         return when(this) {
@@ -31,7 +33,9 @@ enum class VboIndex(val asInt: Int) {
             NORMAL -> 3
             SHININESS -> 1
             EDGE -> 1
-            TEXTURE -> 2
+            TEXTURE_COORD -> 2
+            TEXTURE_LAYER -> 1
+            SPHERE_MODE -> 1
             else -> throw IllegalStateException("Invalid VboIndex Enum")
         }
     }
@@ -46,7 +50,7 @@ enum class VboIndex(val asInt: Int) {
             NORMAL -> GL_ARRAY_BUFFER
             SHININESS -> GL_ARRAY_BUFFER
             EDGE -> GL_ARRAY_BUFFER
-            TEXTURE -> GL_TEXTURE_BUFFER
+            TEXTURE_COORD -> GL_TEXTURE_BUFFER
             else -> throw IllegalStateException("Invalid VboIndex Enum")
         }
     }

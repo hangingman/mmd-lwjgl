@@ -32,6 +32,12 @@ class Material {
     fun hasTexture(): Boolean {
         return !textureFileName.map { it.toChar() }.all { it == NUL }
     }
+
+    fun texture(): String {
+        return textureFileName
+                .toString(charset = charset("Shift_JIS"))
+                .let { s -> s.substring(0, s.indexOf(NUL)) }
+    }
 }
 
 @Bin
@@ -246,6 +252,54 @@ class PmdStruct(override val meshPath: String) : Mesh {
                 .mapIndexed { _, v ->
                     val floatList = mutableListOf<Float>()
                     floatList.addAll(v.uv.toList())
+                    floatList
+                }.flatten().toFloatArray().run {
+                    buildFloatBuffer(this)
+                }
+    }
+
+    override fun texLayerBuffer(): FloatBuffer {
+
+        val vertexMaterialMap = this.vertexMaterialMap
+        val texturePaths = getTexturePaths()
+
+        return this.vertex!!
+                .mapIndexed { i, _ ->
+                    val floatList = mutableListOf<Float>()
+                    val m = vertexMaterialMap.find { (range, _) -> i <= range }!!.second
+                    if (m.hasTexture()) {
+                        // テクスチャがあるのでその階層を返す
+                        val index = texturePaths.indexOfFirst { path -> path.endsWith(m.texture()) }
+                        floatList.add(index.toFloat())
+                    } else {
+                        // テクスチャがないのでとりあえず0fを返す
+                        floatList.add(0f)
+                    }
+                    floatList
+                }.flatten().toFloatArray().run {
+                    buildFloatBuffer(this)
+                }
+    }
+
+    override fun sphereModeBuffer(): FloatBuffer {
+        // -1f: スフィアなし、1f: スフィア乗算、2f: スフィア加算
+        val vertexMaterialMap = this.vertexMaterialMap
+
+        return this.vertex!!
+                .mapIndexed { i, _ ->
+                    val floatList = mutableListOf<Float>()
+                    val m = vertexMaterialMap.find { (range, _) -> i <= range }!!.second
+                    if (m.hasTexture()) {
+                        // スフィアマップの種別を返す
+                        when(File(m.texture()).extension) {
+                            "sph" -> floatList.add(1f)
+                            "spa" -> floatList.add(2f)
+                            else  -> floatList.add(-1f)
+                        }
+                    } else {
+                        // テクスチャがないので-1fを返す
+                        floatList.add(-1f)
+                    }
                     floatList
                 }.flatten().toFloatArray().run {
                     buildFloatBuffer(this)

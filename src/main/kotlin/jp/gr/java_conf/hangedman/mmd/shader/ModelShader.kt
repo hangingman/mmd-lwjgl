@@ -15,6 +15,8 @@ object ModelShader {
         in float shininess;
         in int isEdge;
         in vec2 vUV;
+        in float vTexLayer;
+        in float vSphereMode;
         
         // 次のフラグメントシェーダーに渡す頂点カラー
         out float vAlpha;
@@ -26,6 +28,8 @@ object ModelShader {
         out float vShininess;
         out float vIsEdge;
         out vec2 UV;
+        out float texLayer;
+        out float fSphereMode;
         
         // プログラムから指定されるグローバルGLSL変数
         uniform mat4 model;
@@ -46,6 +50,8 @@ object ModelShader {
             vShininess = shininess;
             vIsEdge = isEdge;
             UV = vUV;
+            texLayer = vTexLayer;
+            fSphereMode = vSphereMode;
             
             if (isEdge == 1)
             {
@@ -78,8 +84,21 @@ object ModelShader {
         in float vShininess;
         in float vIsEdge;
         in vec2 UV;
+        in float texLayer;
+        in float fSphereMode;
         
         out vec4 fragColor;   // フラグメントシェーダから出力する色
+        
+        vec4 getSphereColor(int sphereMode) {
+            vec4 sphereColor = vec4(0, 0, 0, 0);
+          
+            if (sphereMode > 0) {
+                vec2 sphereCoord = 0.5 * (1.0 + vec2(1.0, -1.0) * normalize(vNormal).xy);
+                sphereColor = texture(tex, vec3(UV, texLayer));
+            }
+          
+            return sphereColor;
+        }
         
         void main() {
             float ambientStrength = 0.5;
@@ -95,7 +114,10 @@ object ModelShader {
             vec3 diffuseColor = diffuseStrength * max(0.0, dot(normal, lightDirection)) * vDiffuseColor;
             vec3 reflectDirection = reflect(-lightDirection, normal); 
             vec3 specularColor = specularStrength * pow(max(dot(viewDirection, reflectDirection), 0.0), vShininess) * vSpecularColor;
-             
+            
+            // スフィアマップの種別
+            int sphereMode = int(fSphereMode);
+
             if (vIsEdge == 1)
             {
                 // エッジの描画
@@ -105,10 +127,28 @@ object ModelShader {
             if((UV[0]!=0 && UV[1]!=0))
             {
                 // テクスチャ使用
-                fragColor = texture(tex, vec3(UV, 0.0));
+                vec4 textureColor = texture(tex, vec3(UV, texLayer));
+                vec4 sphereColor = getSphereColor(sphereMode);
+                
+                //if (sphereMode < 0) {
+                    // テクスチャのみ
+                    fragColor = textureColor;
+                    return;
+                /** } else if (sphereMode == 1) {
+                    // スフィアマップ(テカリ/乗算) と rgbColor
+                    fragColor = sphereColor * rgbColor;
+                    return;
+                } else if (sphereMode == 2) {
+                    // スフィアマップ(テカリ/加算) と rgbColor
+                    fragColor = sphereColor + rgbColor;
+                    return;
+                }
                 return;
+                */
             }
+            
             fragColor = vec4(ambientColor + diffuseColor + specularColor, vAlpha);
+            return;
         }
     """
 }

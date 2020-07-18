@@ -12,7 +12,6 @@ import jp.gr.java_conf.hangedman.mmd.renderable_if.RenderableBase
 import jp.gr.java_conf.hangedman.mmd.shader.ModelShader.modelFragmentSource
 import jp.gr.java_conf.hangedman.mmd.shader.ModelShader.modelVertexSource
 import org.joml.Vector3f
-import org.lwjgl.BufferUtils
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL33.*
@@ -44,6 +43,8 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
         val shininessBuffer = mesh.shininessBuffer()           // 光沢度
         val edgeFlagBuffer = mesh.edgeFlagBuffer()             // エッジの有無
         val texCoordBuffer = mesh.texCoordBuffer()             // テクスチャ適用座標
+        val texLayerBuffer = mesh.texLayerBuffer()             // テクスチャの格納階層
+        val sphereModeBuffer = mesh.sphereModeBuffer()         // スフィアマップの設定
 
         // カメラの視点のためPMDモデルの中心を計算する(0, Ymax + Ymin / 2, 0)
         val modelYMax = mesh.getModelYMax()
@@ -71,7 +72,9 @@ class MmdLwjgl(override val windowId: Long) : RenderableBase(windowId) {
                 VboIndex.NORMAL to normalsBuffer,
                 VboIndex.SHININESS to shininessBuffer,
                 VboIndex.EDGE to edgeFlagBuffer,
-                VboIndex.TEXTURE to texCoordBuffer
+                VboIndex.TEXTURE_COORD to texCoordBuffer,
+                VboIndex.TEXTURE_LAYER to texLayerBuffer,
+                VboIndex.SPHERE_MODE to sphereModeBuffer
         ).forEach { (index, buffer) ->
             this.vbo[index.asInt] = glGenBuffers()
             glBindBuffer(GL_ARRAY_BUFFER, this.vbo[index.asInt])
