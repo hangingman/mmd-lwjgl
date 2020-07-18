@@ -67,7 +67,7 @@ object ModelShader {
         
         uniform vec3 uLightPosition;
         uniform vec3 uEdgeColor;
-        uniform sampler2D uTexSampler;
+        uniform sampler2DArray tex;
         
         in float vAlpha;
         in vec3 vDiffuseColor;
@@ -105,7 +105,7 @@ object ModelShader {
             if((UV[0]!=0 && UV[1]!=0))
             {
                 // テクスチャ使用
-                fragColor = texture2D(uTexSampler, UV) * vec4(ambientColor + diffuseColor + specularColor, vAlpha);
+                fragColor = texture(tex, vec3(UV, 0.0));
                 return;
             }
             fragColor = vec4(ambientColor + diffuseColor + specularColor, vAlpha);

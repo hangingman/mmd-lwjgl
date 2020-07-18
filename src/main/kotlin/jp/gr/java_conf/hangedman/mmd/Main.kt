@@ -35,8 +35,8 @@ fun main(args: Array<String>) {
 
     // 複数のメッシュを描画する
     val renderables = listOf(
-            MmdLwjgl(windowId).initialize(meshStruct),
-            XyzAxis(windowId).initialize()
+            MmdLwjgl(windowId).initialize(meshStruct)
+            //, XyzAxis(windowId).initialize()
     )
 
     // コールバック関数の設定
@@ -63,6 +63,7 @@ fun initWindow(): Long {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE)
+    //glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE)
 
     // ウィンドウ生成
     val windowId: Long = glfwCreateWindow(width, height, title, 0, 0)
